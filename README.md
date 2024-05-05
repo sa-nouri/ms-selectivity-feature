@@ -9,10 +9,7 @@ The project explores the effect of stimulus catagories on saccade/microsaccade, 
   - [Table of Contents](#table-of-contents)
   - [Abstract](#abstract)
   - [Project Structure](#project-structure)
-    - [**Notebooks**](#notebooks)
-    - [**SRC**](#src)
   - [Installation and Setup Instructions](#installation-and-setup-instructions)
-  - [Usage](#usage)
   - [Contributing](#contributing)
   - [Citing This Work](#citing-this-work)
   - [License](#license)
@@ -28,19 +25,6 @@ Microsaccades, a form of fixational eye movements, maintain visual stability dur
 - [Notebooks](./notebooks/): Jupyter notebooks for exploration and analysis.
 - [SRC](./src/): Source code for data preprocessing, model training, statistical analysis, and graphing
 
-### **Notebooks**
-
-- [`analyzing_pacs`](./notebooks/analyzing_pacs/): Explore and visualize the generated PAC data.
-- [`analyzing_saliency_maps`](./notebooks/analyzing_saliency_maps/): Explore and visualize the generated saliency maps data.
-- [`grad_camp`](./notebooks/grad_cam/): Apply an example of Grad-CAM as an explainable AI method.
-
-### **SRC**
-
-- [PACNET](./src/PACNET/): Implements the generation of raw PAC data and images, utilizes deep transfer learning based on VGG16 for estimating motor vigor from raw PAC data, and includes Grad-CAM implementation for feature visualization. Additionally, it performs correlation analysis for representational similarity among features and raw PACs.
-- [Headplots](./src/Headplots/): Visualizes headplots using MATLAB
-- [Lasso](./src/Lasso/): Employs Lasso regression in MATLAB to estimate motor vigor from selected features and PAC data.
-- [Statistical Analysis](./src/Statistical%20Analysis/): Conducts statistical analysis in R, examining the relationships and effects within PAC data and saliency maps under various conditions.
-
 ## Installation and Setup Instructions
 
 To use the tools and scripts provided in this repository, follow these general setup instructions:
@@ -50,10 +34,6 @@ To use the tools and scripts provided in this repository, follow these general s
 2. **Environment Setup**:
    - Python: Ensure Python 3.11.7 is installed. Install required libraries using `pip install -r requirements.txt`.
    - MATLAB: Ensure MATLAB is installed with the necessary toolboxes for data analysis.
-
-## Usage
-
-For detailed usage instructions, including how to run each component of the project, please refer to the [SRC README.md](./src/README.md) file.
 
 ## Contributing
 
