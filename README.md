@@ -22,8 +22,9 @@ Microsaccades, a form of fixational eye movements, maintain visual stability dur
 
 ## Project Structure
 
-- [Notebooks](./notebooks/): Jupyter notebooks for exploration and analysis.
-- [SRC](./src/): Source code for data preprocessing, model training, statistical analysis, and graphing
+- [data](./data/): Contains a raw sample of human and monkey eye movement data.
+- [Scripts](./scripts/): Source code for data preprocessing, model training, statistical analysis, and visualizations.
+- [Notebooks](./notebooks/): Jupyter notebooks for exploration, analysis, and visualizations.
 
 ## Installation and Setup Instructions
 
