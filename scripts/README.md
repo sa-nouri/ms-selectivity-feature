@@ -4,9 +4,10 @@ This folder contains Python scripts for analyzing eye movement data, specificall
 
 ## Contents
 
+- `preprocess.py`: Python functions for applying preprocessing to eye movement data.
+- `uitls.py`: Python scripts for applying and computing some functions.
 - `detect_saccades.py`: Python script for detecting saccades in eye movement data.
 - `detect_microsaccades.py`: Python script for detecting microsaccades in eye movement data.
-- `uitls.py`: Python scripts for applying and computing some functions
 
 ## Requirements
 
