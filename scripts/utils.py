@@ -92,3 +92,29 @@ def low_pass_filter_eye_positions(x_positions, y_positions, cutoff_frequency, sa
     filtered_y = filtfilt(b, a, y_positions)
 
     return filtered_x, filtered_y
+
+
+def validate_saccades_min_duration(saccades, timestamps, min_duration):
+    """
+    Validate the detected saccades based on their duration.
+    If a saccade is shorter than min_duration, it is considered noise and discarded.
+
+    Args:
+    - saccades (list of tuples): List of detected saccades, where each saccade is represented as a tuple (start_index, end_index).
+    - timestamps (array): Array of timestamps corresponding to the eye movement data.
+    - min_duration (float): The minimal duration (in seconds or milliseconds) required for a valid saccade.
+
+    Returns:
+    - valid_saccades (list of tuples): List of valid saccades (those that pass the duration filter).
+    """
+    valid_saccades = []
+    
+    for start_index, end_index in saccades:
+        duration = timestamps[end_index] - timestamps[start_index]
+        
+        if duration >= min_duration:
+            valid_saccades.append((start_index, end_index))
+        else:
+            print(f"Saccade from {timestamps[start_index]} to {timestamps[end_index]} discarded (duration: {duration} < {min_duration})")
+    
+    return valid_saccades
