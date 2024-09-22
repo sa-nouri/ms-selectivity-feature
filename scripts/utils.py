@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.signal import butter, filtfilt
 from sklearn import mixture
 
 
@@ -65,3 +66,26 @@ def noise_threshold_extract(data_input):
     value = float((means[idd[0]]+3*covariances[idd[0]])[0])
     return value
 
+def low_pass_filter_eye_positions(x_positions, y_positions, cutoff_frequency, sampling_rate, order=4):
+    """
+    Apply a low-pass Butterworth filter to eye position data (x and y positions).
+    
+    Args:
+    - x_positions (array): X positions of eye movements.
+    - y_positions (array): Y positions of eye movements.
+    - cutoff_frequency (float): Cutoff frequency for the low-pass filter in Hz.
+    - sampling_rate (float): Sampling rate of the eye-tracking data in Hz.
+    - order (int): The order of the Butterworth filter (default is 4).
+    
+    Returns:
+    - filtered_x (array): Filtered X positions.
+    - filtered_y (array): Filtered Y positions.
+    """
+    nyquist_frequency = 0.5 * sampling_rate
+    normalized_cutoff = cutoff_frequency / nyquist_frequency
+    b, a = butter(order, normalized_cutoff, btype='low', analog=False)
+
+    filtered_x = filtfilt(b, a, x_positions)
+    filtered_y = filtfilt(b, a, y_positions)
+
+    return filtered_x, filtered_y
