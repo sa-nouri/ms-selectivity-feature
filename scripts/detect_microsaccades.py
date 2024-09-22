@@ -1,55 +1,63 @@
 import numpy as np
 
-from scripts.utils import compute_amplitude, compute_velocity
+from scripts.utils import (compute_amplitude, compute_partial_velocity,
+                           compute_velocity)
 
 
-def detect_microsaccades(x_positions, y_positions, timestamps, velocity_multiplier=6, amplitude_threshold=1.0):
+def detect_microsaccades(x_positions, y_positions, timestamps, params):
     """
-    Detect microsaccades in eye movement data.
-
+    Detect saccades in eye movement data based on changes in gaze direction.
+    
     Args:
     - x_positions (array): X positions of eye movements.
     - y_positions (array): Y positions of eye movements.
     - timestamps (array): Timestamps corresponding to the eye movement data.
-    - velocity_multiplier (float): Multiplier for the median velocity threshold (default is 6).
-    - amplitude_threshold (float): Maximum amplitude to classify as a microsaccade (default is 1.0).
-
-    Returns:
-    - microsaccades (list of dict): Detected microsaccades with start time, end time, amplitude, duration, and peak velocity.
-    """
+    - params (dict): A dictionary containing:
+        - 'min_duration': Minimum duration (in seconds) required for a valid saccade.
+        - 'threshold_multiplier': Multiplier for sigma_vx and sigma_vy to set velocity threshold.
+        - 'sampling_rate': The sampling rate for interpolation (optional).
     
-    velocities = compute_velocity(x_positions, y_positions, timestamps)
-    median_velocity = np.median(velocities)
-    velocity_threshold = velocity_multiplier * median_velocity
+    Returns:
+    - list: List of dictionaries containing information about detected saccades.
+    """
+    velocities, sigma_vx, sigma_vy = compute_velocity(x_positions, y_positions, timestamps)
+    # velocity_threshold = params['threshold_multiplier'] * np.sqrt(sigma_vx**2 + sigma_vy**2)
+    
+    velocity_threshold_x = sigma_vx * params['threshold_multiplier']
+    velocity_threshold_y = sigma_vy * params['threshold_multiplier']
     
     microsaccades = []
-
-    for i in range(1, len(velocities) - 1):
-        if velocities[i] > velocity_threshold:
-            if current_microsaccade is None:
-                current_microsaccade = {'start': i, 'end': i}
-                start_index = i
-            current_microsaccade['end'] = i
-            
-            amplitude = compute_amplitude(x_positions, y_positions, start_index, i)
-            
-            if amplitude < amplitude_threshold:
-                end_time = timestamps[i]
-                duration = end_time - timestamps[start_index]
-                peak_velocity = velocities[i]
-
-                microsaccade = {
-                    'start_time': timestamps[start_index],
-                    'end_time': end_time,
-                    'amplitude': amplitude,
-                    'duration': duration,
-                    'peak_velocity': peak_velocity
-                }
-                microsaccades.append(microsaccade)
-            
-            current_microsaccade = None
-        else:
-            current_microsaccade = None
+    current_saccade = None
+    saccade_start = None
     
-    return microsaccades
+    for i in range(1, len(velocities) - 1):
+        
+        velocity_x, velocity_y = compute_partial_velocity(x_positions, y_positions, timestamps, i-1, i)
+        velocity_xy = (velocity_x**2 / velocity_threshold_x**2) + (velocity_y**2 / velocity_threshold_y**2)
+        
+        # if velocities[i] >= velocity_threshold:
+        if velocity_xy > 1:
+            if current_saccade is None:
+                saccade_start = i
+                current_saccade = {
+                    'start': i, 
+                    'end': i, 
+                    'amplitude': 0, 
+                    'velocity': 0, 
+                    'duration': 0
+                }
+            current_saccade['end'] = i
+        
+        if current_saccade is not None:
+            current_saccade['duration'] = timestamps[current_saccade['end']] - timestamps[saccade_start]
+        
+            if current_saccade['duration'] >= params['min_duration']:
+                current_saccade['amplitude'] = compute_amplitude(x_positions, y_positions, saccade_start, current_saccade['end'])
+                current_saccade['velocity'] = current_saccade['amplitude'] / current_saccade['duration']
+                # current_saccade['velocity'] = velocities[i]
+                if current_saccade['amplitude'] <= params["amplitude_th"]:
+                    microsaccades.append(current_saccade)
 
+            current_saccade = None
+
+    return microsaccades
