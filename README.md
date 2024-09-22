@@ -10,6 +10,7 @@ The project explores the effect of stimulus catagories on saccade/microsaccade, 
   - [Abstract](#abstract)
   - [Project Structure](#project-structure)
   - [Installation and Setup Instructions](#installation-and-setup-instructions)
+  - [Data Availability](#data-availability)
   - [Contributing](#contributing)
   - [Citing This Work](#citing-this-work)
   - [License](#license)
@@ -22,7 +23,7 @@ Microsaccades, a form of fixational eye movements, maintain visual stability dur
 
 ## Project Structure
 
-- [Data](./data/): Contains raw samples of human and monkey eye movement data. Further information is available on [Data-Readme](./data/README.md).
+- [Data](./data/): Contains raw samples of human and monkey eye movement data.
 - [Scripts](./scripts/): Source code for data preprocessing, statistical analysis, and visualizations. Further information about the scripts is available on [Scripts-Readme](./scripts/README.md).
 <!-- - [Notebooks](./notebooks/): Jupyter notebooks for exploration, analysis, and visualizations. -->
 
@@ -34,6 +35,10 @@ To use the tools and scripts provided in this repository, follow these general s
 
 2. **Environment Setup**:
    - Python: Ensure Python 3.11.7 is installed. Install required libraries using `pip install -r requirements.txt`.
+
+## Data Availability
+
+In [Data](./data/) directory, we have provided sample data from a complete session for both [human](./data/human_sample/) and [monkey](./data/monkey_sample/) subjects. While we recognize the importance of data availability for verification and further research, the entire dataset cannot be made publicly available due to privacy and ethical constraints. However, as mentioned in the Data Availability section of our paper, we are happy to share additional data upon reasonable request from recognized academic or research institutions.
 
 ## Contributing
 
