@@ -1,5 +1,7 @@
 import numpy as np
+
 from scripts.utils import compute_velocity
+
 
 def detect_glitches(x_positions, y_positions, timestamps, max_speed=1000):
     """
