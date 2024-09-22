@@ -16,15 +16,15 @@ The project explores the effect of stimulus catagories on saccade/microsaccade, 
 
 ## Abstract
 
-Microsaccades, a form of fixational eye movements, maintain visual stability during stationary observations. Previous studies have provided valuable insights into the relationship between microsaccade characteristics and external stimuli. However, the dynamic nature of microsaccades provides an opportunity to explore the mechanisms of information processing, particularly object decoding. This study examines the modulation of microsaccadic rates by different stimulus categories. Our experimental approach involves an analysis of microsaccade characteristics in monkeys and human subjects engaged in a passive viewing task. The stimulus categories comprised four primary categories: human, animal, natural, and man-made. We identified distinct microsaccade patterns across different stimulus categories, successfully decoding the stimulus category based on the microsaccade rate post-stimulus distribution. Our experiments demonstrate that stimulus categories can be classified with an average accuracy and recall of up to 85%. These results exhibit potential for advancing neurobiological models, developing more effective human-machine interfaces, optimizing visual stimuli in experimental designs, and expanding our understanding of the capability of microsaccades as a feature for object decoding.
+Microsaccades, a form of fixational eye movements, maintain visual stability during stationary observations. Previous studies have provided valuable insights into the relationship between microsaccade characteristics and external stimuli. However, the dynamic nature of microsaccades provides an opportunity to explore the mechanisms of information processing, particularly object decoding. This study examines the modulation of microsaccadic rates by different stimulus categories. Our experimental approach involves an analysis of microsaccade characteristics in monkeys and human subjects engaged in a passive viewing task. The stimulus categories comprised four primary categories: human, animal, natural, and man-made. We identified distinct microsaccade patterns across different stimulus categories, successfully decoding the stimulus category based on the microsaccade rate post-stimulus distribution. Our experiments demonstrate that stimulus categories can be classified with an average accuracy and recall of up to 85%. Our study found that microsaccade rates are independent of pupil size changes. Neural data showed that category classification in the inferior temporal (IT) cortex peaks earlier than microsaccade rates, suggesting a feedback mechanism from the IT cortex that influences eye movements after stimulus discrimination. These results exhibit potential for advancing neurobiological models, developing more effective human-machine interfaces, optimizing visual stimuli in experimental designs, and expanding our understanding of the capability of microsaccades as a feature for object decoding.
 
 **Keywords**: Microsaccade; Eye Movements; Eye Tracking; Object Recognition
 
 ## Project Structure
 
 - [data](./data/): Contains raw samples of human and monkey eye movement data. Further information is available on [Data-Readme](./data/README.md)
-- [Scripts](./scripts/): Source code for data preprocessing, model training, statistical analysis, and visualizations. Further information about the scripts is available on [Scripts-Readme](./scripts/README.md).
-- [Notebooks](./notebooks/): Jupyter notebooks for exploration, analysis, and visualizations.
+- [Scripts](./scripts/): Source code for data preprocessing, statistical analysis, and visualizations. Further information about the scripts is available on [Scripts-Readme](./scripts/README.md).
+<!-- - [Notebooks](./notebooks/): Jupyter notebooks for exploration, analysis, and visualizations. -->
 
 ## Installation and Setup Instructions
 
@@ -34,7 +34,6 @@ To use the tools and scripts provided in this repository, follow these general s
 
 2. **Environment Setup**:
    - Python: Ensure Python 3.11.7 is installed. Install required libraries using `pip install -r requirements.txt`.
-   - MATLAB: Ensure MATLAB is installed with the necessary toolboxes for data analysis.
 
 ## Contributing
 
