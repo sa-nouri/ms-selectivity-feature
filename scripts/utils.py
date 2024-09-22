@@ -3,28 +3,53 @@ from scipy.signal import butter, filtfilt
 from sklearn import mixture
 
 
-def compute_velocity(x_positions, y_positions, timestamps):
+def compute_velocity(x_positions, y_positions, timestamps, sampling_rate=None):
     """
-    Compute velocity of eye movements based on change in position over time.
+    Compute the velocity of eye movements based on the two-point method, apply interpolation for missing data,
+    apply a five-point running average, and calculate the median-based standard deviation of the horizontal and
+    vertical velocity components (σvx, σvy).
 
     Args:
     - x_positions (array): X positions of eye movements.
     - y_positions (array): Y positions of eye movements.
-    - timestamps (array): Timestamps corresponding to the eye movement data.
+    - timestamps (array): Timestamps corresponding to each eye movement position.
+    - sampling_rate (float, optional): Desired sampling rate, if specified for interpolation.
 
     Returns:
-    - array: Velocity values for each sample in the eye movement data.
+    - velocities (array): Smoothed velocity values for each time point.
+    - sigma_vx (float): Median-based standard deviation for the horizontal (x) gaze positions.
+    - sigma_vy (float): Median-based standard deviation for the vertical (y) gaze positions.
     """
+    
+    valid_indices = ~np.isnan(x_positions) & ~np.isnan(y_positions)
+    x_positions = np.interp(timestamps, timestamps[valid_indices], x_positions[valid_indices])
+    y_positions = np.interp(timestamps, timestamps[valid_indices], y_positions[valid_indices])
+    
     velocities = []
     for i in range(1, len(timestamps)):
-        dx = x_positions[i] - x_positions[i-1]
-        dy = y_positions[i] - y_positions[i-1]
-        dt = timestamps[i] - timestamps[i-1]
-        velocity = np.sqrt(dx**2 + dy**2)/dt
+        dx = x_positions[i] - x_positions[i - 1]
+        dy = y_positions[i] - y_positions[i - 1]
+        dt = timestamps[i] - timestamps[i - 1]
+        
+        # Velocity is calculated as the Euclidean distance over time
+        velocity = np.sqrt(dx**2 + dy**2) / dt
         velocities.append(velocity)
-
+    
     # velocities *= 1e3  # degree per second
-    return velocities
+    velocities = np.array(velocities)
+    
+    # velocities = np.convolve(velocities, np.ones(5)/5, mode='same')
+    # velocities[:2] = velocities[2]
+    # velocities[-2:] = velocities[-3]
+    
+    vx = np.diff(x_positions) / np.diff(timestamps)
+    vy = np.diff(y_positions) / np.diff(timestamps)
+    
+    # Median-based standard deviation for x and y
+    sigma_vx = np.sqrt(np.median((vx - np.median(vx))**2))
+    sigma_vy = np.sqrt(np.median((vy - np.median(vy))**2))
+
+    return velocities, sigma_vx, sigma_vy
 
 def compute_amplitude(x_positions, y_positions, start_index, end_index):
     """
@@ -118,3 +143,32 @@ def validate_saccades_min_duration(saccades, timestamps, min_duration):
             print(f"Saccade from {timestamps[start_index]} to {timestamps[end_index]} discarded (duration: {duration} < {min_duration})")
     
     return valid_saccades
+
+def interpolate_data(x_positions, y_positions, timestamps, sampling_freq=None):
+    """
+    Interpolate x and y positions based on uniform timestamps if sampling is non-uniform.
+
+    Args:
+    - x_positions (array): X positions of eye movements.
+    - y_positions (array): Y positions of eye movements.
+    - timestamps (array): Corresponding timestamps of eye movements.
+    - sampling_freq (float, optional): The desired sampling frequency in Hz. If None, no interpolation is done.
+
+    Returns:
+    - x_inter (array): Interpolated X positions.
+    - y_inter (array): Interpolated Y positions.
+    - t_inter (array): Interpolated timestamps.
+    """
+    if sampling_freq is None:
+        return x_positions, y_positions, timestamps
+
+    total_time = timestamps[-1] - timestamps[0]
+    frame_duration = 1000 / sampling_freq  # Convert Hz to milliseconds
+    num_samples = int(np.round(total_time / frame_duration)) + 1
+
+    t_inter = np.linspace(timestamps[0], timestamps[-1], num_samples)
+
+    x_inter = np.interp(t_inter, timestamps, x_positions)
+    y_inter = np.interp(t_inter, timestamps, y_positions)
+
+    return x_inter, y_inter, t_inter
