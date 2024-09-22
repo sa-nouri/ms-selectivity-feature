@@ -24,7 +24,7 @@ def detect_saccades(x_positions, y_positions, timestamps, velocity_multiplier=6,
     current_saccade = None
     saccade_start = None
     
-    for i in range(1, len(x_positions)):
+    for i in range(1, len(velocities) - 1):
         dx = x_positions[i] - x_positions[i-1]
         dy = y_positions[i] - y_positions[i-1]
         distance = np.sqrt(dx**2 + dy**2)
