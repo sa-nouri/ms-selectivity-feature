@@ -22,6 +22,8 @@ def compute_velocity(x_positions, y_positions, timestamps):
         dt = timestamps[i] - timestamps[i-1]
         velocity = np.sqrt(dx**2 + dy**2)/dt
         velocities.append(velocity)
+
+    # velocities *= 1e3  # degree per second
     return velocities
 
 def compute_amplitude(x_positions, y_positions, start_index, end_index):
@@ -50,6 +52,7 @@ def compute_velocity_consecutive(x_position, y_position, timestamp):
     y_velocity = np.append(0, np.abs(np.diff(y_position)/np.diff(timestamp)))
     
     Pythagorean_velocity = np.sqrt((np.square(x_velocity)) + (np.square(y_velocity)))
+    # Pythagorean_velocity *= 1e3  # degree per second
     return x_velocity, y_velocity, Pythagorean_velocity
 
 
