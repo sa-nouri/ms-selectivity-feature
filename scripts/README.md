@@ -1,13 +1,15 @@
 # Eye Movement Analysis Scripts
 
-This folder contains Python scripts for analyzing eye movement data, specifically for detecting microsaccades and computing their characteristics.
+This folder contains Python scripts for analyzing eye movement data, specifically for detecting saccades/microsaccades and computing their characteristics.
 
 ## Contents
 
-- `preprocess.py`: Python functions for applying preprocessing to eye movement data.
-- `uitls.py`: Python scripts for applying and computing some functions.
-- `detect_saccades.py`: Python script for detecting saccades in eye movement data.
-- `detect_microsaccades.py`: Python script for detecting microsaccades in eye movement data.
+- [`preprocess.py`](./preprocess.py): Python functions for applying preprocessing to eye movement data.
+- [`blink_detector.py`](./blink_detector.py): Python function for detecting blinks in eye movement data based on eye position data
+- [`glitch_detector.py`](./glitch_detector.py): Python function for detecting glitches in eye-tracking.
+- [`uitls.py`](./utils.py): Python scripts for applying and computing velocity and amplitude.
+- [`detect_saccades.py`](./detect_saccades.py): Python script for detecting saccades in eye movement data.
+- [`detect_microsaccades.py`](./detect_microsaccades.py): Python script for detecting microsaccades in eye movement data.
 
 ## Requirements
 
