@@ -38,7 +38,7 @@ To use the tools and scripts provided in this repository, follow these general s
 
 ## Data Availability
 
-In [Data](./data/) directory, we have provided sample data from a complete session for both [human](./data/human_sample/) and [monkey](./data/monkey_sample/) subjects. While we recognize the importance of data availability for verification and further research, the entire dataset cannot be made publicly available due to privacy and ethical constraints. However, as mentioned in the Data Availability section of our paper, we are happy to share additional data upon reasonable request from recognized academic or research institutions.
+In [Data](./data/) directory, we have provided sample data from a complete session for both [human](./data/human_sample/) and [monkey](./data/monkey_sample/) subjects. While we recognize the importance of data availability for verification and further research, the entire dataset cannot be made publicly available due to privacy and research lab constraints. However, as mentioned in the Data Availability section of our paper, we are happy to share additional data upon reasonable request from recognized academic or research institutions.
 
 ## Contributing
 
