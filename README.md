@@ -49,13 +49,14 @@ If you want to contribute to this project, please check our [contributing guidel
 If you use the "ms-selectivity-features" project or the research it is based on for your own work, please consider citing the following paper:
 
 ```bibtex
-@article{nouri2024microsaccade,
-  title={Microsaccade Selectivity as Discriminative Feature for Object Decoding},
-  author={Nouri, Salar and Soltani Tehrani, Amirali and Faridani, Niloufar and Toosi, Ramin and Dehaqani, Mohammad-Reza A},
-  journal={bioRxiv},
-  pages={2024--04},
-  year={2024},
-  publisher={Cold Spring Harbor Laboratory}
+@article{nouri2025microsaccade,
+  title={Microsaccade selectivity as discriminative feature for object decoding},
+  author={Nouri, Salar and Tehrani, Amirali Soltani and Faridani, Niloufar and Toosi, Ramin and Noroozi, Jalaledin and Dehaqani, Mohammad-Reza A},
+  journal={Iscience},
+  volume={28},
+  number={1},
+  year={2025},
+  publisher={Elsevier}
 }
 ```
 
