@@ -34,7 +34,7 @@ def test_detect_blinks():
         assert blink["amplitude"] > 0
 
 
-def test_validate_blinks():
+def test_validate_blinks() -> None:
     """Test blink validation functionality."""
     # Create sample blinks
     blinks = [
@@ -102,3 +102,24 @@ def test_validate_blinks_edge_cases():
 
     with pytest.raises(ValueError):
         validate_blinks(invalid_blinks)
+
+
+def test_blink_detector_with_params() -> None:
+    # Test data
+    blinks = [(0, 2), (3, 4), (5, 8)]  # (start_index, end_index)
+    x_positions = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8])
+    y_positions = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8])
+
+    # Test validation
+    valid_blinks = validate_blinks(blinks, x_positions, y_positions)
+    assert len(valid_blinks) == 3
+
+
+def test_blink_detector_with_empty_data() -> None:
+    # Test with empty data
+    timestamps = np.array([])
+    x_positions = np.array([])
+    y_positions = np.array([])
+
+    blinks = detect_blinks(x_positions, y_positions, timestamps)
+    assert len(blinks) == 0

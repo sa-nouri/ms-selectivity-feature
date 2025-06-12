@@ -1,5 +1,5 @@
 import copy
-from typing import TypedDict
+from typing import TypedDict, Any, Optional
 
 import numpy as np
 
@@ -15,7 +15,7 @@ class BlinkParams(TypedDict):
 class BlinkDetectorByEyePositions:
     """Detect blinks in eye movement data based on changes in gaze direction."""
 
-    def __init__(self, params: BlinkParams):
+    def __init__(self, params: BlinkParams) -> None:
         """Initialize the blink detector with parameters.
 
         Args:
@@ -27,77 +27,21 @@ class BlinkDetectorByEyePositions:
         """
         self.params = params
 
-    def detect_blinks(
-        self,
-        x_positions: np.ndarray,
-        y_positions: np.ndarray,
-        timestamps: np.ndarray,
-    ) -> list[dict]:
-        """Detect blinks in eye movement data.
-
-        Args:
-            x_positions: Array of X positions of eye movements
-            y_positions: Array of Y positions of eye movements
-            timestamps: Array of timestamps corresponding to the eye movement data
-
-        Returns:
-            List of dictionaries containing information about detected blinks, where
-            each dictionary contains:
-                - start_time: Starting time of the blink
-                - end_time: Ending time of the blink
-                - duration: Duration of the blink in seconds
-        """
-        velocities, sigma_vx, sigma_vy = compute_velocity(
-            x_positions, y_positions, timestamps
-        )
-        velocity_threshold = self.params["threshold_multiplier"] * np.sqrt(
-            sigma_vx**2 + sigma_vy**2
-        )
-
+    def detect(self, x: np.ndarray, y: np.ndarray, timestamps: np.ndarray) -> list[dict[str, Any]]:
+        """Detect blinks in eye tracking data."""
         blinks = []
-        current_blink = None
-        blink_start = None
-
-        for i in range(1, len(velocities) - 1):
-            velocity_x, velocity_y = compute_velocity(
-                x_positions, y_positions, timestamps, i - 1, i
-            )
-            velocity_magnitude = np.sqrt(velocity_x**2 + velocity_y**2)
-
-            if velocity_magnitude >= velocity_threshold:
-                if current_blink is None:
-                    blink_start = i
-                    current_blink = {
-                        "start_time": timestamps[i],
-                        "end_time": timestamps[i],
-                        "duration": 0,
-                    }
-                current_blink["end_time"] = timestamps[i]
-            elif current_blink is not None:
-                current_blink["duration"] = (
-                    current_blink["end_time"] - current_blink["start_time"]
-                )
-
-                if (
-                    current_blink["duration"] >= self.params["min_duration"]
-                    and current_blink["duration"] <= self.params["max_duration"]
-                ):
-                    blinks.append(current_blink)
-
-                current_blink = None
-                blink_start = None
-
-        # Handle the last blink if it exists
-        if current_blink is not None:
-            current_blink["duration"] = (
-                current_blink["end_time"] - current_blink["start_time"]
-            )
-            if (
-                current_blink["duration"] >= self.params["min_duration"]
-                and current_blink["duration"] <= self.params["max_duration"]
-            ):
-                blinks.append(current_blink)
-
+        for i in range(len(x) - 1):
+            if np.isnan(x[i]) or np.isnan(y[i]):
+                start_idx = i
+                while i < len(x) and (np.isnan(x[i]) or np.isnan(y[i])):
+                    i += 1
+                end_idx = i
+                if end_idx - start_idx >= self.params["min_duration"]:
+                    blinks.append({
+                        "start_idx": start_idx,
+                        "end_idx": end_idx,
+                        "duration": end_idx - start_idx
+                    })
         return blinks
 
 
@@ -133,29 +77,23 @@ def detect_blinks(
         "threshold_multiplier": threshold_multiplier,
     }
     detector = BlinkDetectorByEyePositions(params)
-    return detector.detect_blinks(x_positions, y_positions, timestamps)
+    return detector.detect(x_positions, y_positions, timestamps)
 
 
 def validate_blinks(
-    blinks: list[dict],
-    min_duration: float = 0,
-    max_duration: float = None,
-) -> list[dict]:
-    """Validate blinks based on duration.
+    blinks: list[dict[str, Any]],
+    x: np.ndarray,
+    y: np.ndarray,
+    max_duration: Optional[float] = None
+) -> list[dict[str, Any]]:
+    """Validate detected blinks."""
+    if not blinks:
+        return []
 
-    Args:
-        blinks: List of dictionaries containing information about detected blinks
-        min_duration: Minimum duration (in seconds) required for a valid blink
-        max_duration: Maximum duration (in seconds) allowed for a valid blink
+    valid_blinks = []
+    for blink in blinks:
+        if max_duration is not None and blink["duration"] > max_duration:
+            continue
+        valid_blinks.append(blink)
 
-    Returns:
-        List of dictionaries containing information about validated blinks
-    """
-    validated = []
-    for b in blinks:
-        if b.get("duration", 0) < 0:
-            raise ValueError("Invalid blink data: negative values")
-        if b.get("duration", 0) >= min_duration:
-            if max_duration is None or b.get("duration", 0) < max_duration:
-                validated.append(b)
-    return validated
+    return valid_blinks

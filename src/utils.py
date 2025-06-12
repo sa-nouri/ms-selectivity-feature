@@ -1,4 +1,4 @@
-from typing import TypedDict
+from typing import TypedDict, Optional, Tuple, Any
 
 import numpy as np
 
@@ -164,3 +164,63 @@ def compute_velocity_consecutive(
 
     Pythagorean_velocity = np.sqrt(np.square(x_velocity) + np.square(y_velocity))
     return x_velocity, y_velocity, Pythagorean_velocity
+
+
+def calculate_velocity(
+    x: np.ndarray,
+    y: np.ndarray,
+    start_idx: Optional[int] = None,
+    end_idx: Optional[int] = None,
+    params: Optional[VelocityParams] = None,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Compute velocity of eye movements.
+
+    Args:
+        x: Array of X positions of eye movements.
+        y: Array of Y positions of eye movements.
+        start_idx: Starting index for velocity computation.
+        end_idx: Ending index for velocity computation.
+        params: Dictionary containing velocity computation parameters:
+            - window_size: Size of the window for velocity computation in samples.
+
+    Returns:
+        Tuple containing:
+            - Tuple of velocity arrays (vx, vy)
+            - Standard deviation of x velocity
+            - Standard deviation of y velocity
+    """
+    if params is None:
+        params = {"window_size": 5}
+
+    if start_idx is None:
+        start_idx = 0
+    if end_idx is None:
+        end_idx = len(x)
+
+    # Compute velocity using central difference
+    dt = np.diff(x[start_idx:end_idx])
+    dx = np.diff(x[start_idx:end_idx])
+    dy = np.diff(y[start_idx:end_idx])
+
+    vx = dx / dt
+    vy = dy / dt
+
+    # Pad arrays to match input length
+    vx = np.pad(vx, (1, 0), mode="edge")
+    vy = np.pad(vy, (1, 0), mode="edge")
+
+    # Compute standard deviations
+    sigma_vx = np.std(vx)
+    sigma_vy = np.std(vy)
+
+    return (vx, vy), sigma_vx, sigma_vy
+
+
+def calculate_amplitude(x: np.ndarray, y: np.ndarray) -> float:
+    """Calculate the amplitude of eye movement."""
+    return float(np.sqrt(x**2 + y**2).max())
+
+
+def calculate_duration(start_idx: int, end_idx: int) -> float:
+    """Calculate the duration of eye movement."""
+    return float(end_idx - start_idx)

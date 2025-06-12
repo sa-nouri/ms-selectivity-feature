@@ -8,7 +8,7 @@ from src.utils import (
 )
 
 
-def test_compute_velocity():
+def test_compute_velocity() -> None:
     # Test data
     x_positions = np.array([0, 1, 2, 3, 4])
     y_positions = np.array([0, 1, 2, 3, 4])
@@ -27,7 +27,7 @@ def test_compute_velocity():
     assert sigma_vy >= 0
 
 
-def test_compute_amplitude():
+def test_compute_amplitude() -> None:
     # Test data
     x_positions = np.array([0, 3, 4])
     y_positions = np.array([0, 4, 0])
@@ -41,7 +41,7 @@ def test_compute_amplitude():
     assert np.isclose(amplitude, 4.0)
 
 
-def test_compute_partial_velocity():
+def test_compute_partial_velocity() -> None:
     # Test data
     x_positions = np.array([0, 1, 2])
     y_positions = np.array([0, 1, 2])
@@ -53,7 +53,7 @@ def test_compute_partial_velocity():
     assert np.isclose(vy, 1.0)
 
 
-def test_compute_velocity_consecutive():
+def test_compute_velocity_consecutive() -> None:
     # Test data
     x_position = np.array([0, 1, 2, 3])
     y_position = np.array([0, 1, 2, 3])

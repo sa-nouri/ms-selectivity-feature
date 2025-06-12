@@ -33,7 +33,7 @@ def test_detect_glitches():
         assert glitch["magnitude"] > 0
 
 
-def test_validate_glitches():
+def test_validate_glitches() -> None:
     """Test glitch validation functionality."""
     # Create sample glitches
     glitches = [
@@ -93,3 +93,24 @@ def test_validate_glitches_edge_cases():
 
     with pytest.raises(ValueError):
         validate_glitches(invalid_glitches)
+
+
+def test_glitch_detector_with_params() -> None:
+    # Test data
+    glitches = [(0, 2), (3, 4), (5, 8)]  # (start_index, end_index)
+    x_positions = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8])
+    y_positions = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8])
+
+    # Test validation
+    valid_glitches = validate_glitches(glitches, x_positions, y_positions)
+    assert len(valid_glitches) == 3
+
+
+def test_glitch_detector_with_empty_data() -> None:
+    # Test with empty data
+    timestamps = np.array([])
+    x_positions = np.array([])
+    y_positions = np.array([])
+
+    glitches = detect_glitches(x_positions, y_positions, timestamps)
+    assert len(glitches) == 0

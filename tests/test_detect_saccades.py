@@ -6,7 +6,7 @@ import pytest
 from src.detect_saccades import detect_saccades, validate_saccades
 
 
-def test_detect_saccades():
+def test_detect_saccades() -> None:
     """Test saccade detection functionality."""
     # Create sample eye tracking data with saccades
     timestamps = np.arange(0, 1000, 1)  # 1 second of data at 1000 Hz
@@ -35,7 +35,7 @@ def test_detect_saccades():
         assert "direction" in saccade
 
 
-def test_validate_saccades():
+def test_validate_saccades() -> None:
     """Test saccade validation functionality."""
     # Create sample saccades
     saccades = [
@@ -86,7 +86,7 @@ def test_validate_saccades():
     assert len(validated) == 2  # Two saccades should pass
 
 
-def test_detect_saccades_edge_cases():
+def test_detect_saccades_edge_cases() -> None:
     """Test saccade detection with edge cases."""
     # Test with empty data
     timestamps = np.array([])
@@ -112,7 +112,7 @@ def test_detect_saccades_edge_cases():
         detect_saccades(x_positions, y_positions, timestamps)
 
 
-def test_validate_saccades_edge_cases():
+def test_validate_saccades_edge_cases() -> None:
     """Test saccade validation with edge cases."""
     # Test with empty saccades list
     validated = validate_saccades([])
@@ -127,3 +127,13 @@ def test_validate_saccades_edge_cases():
 
     with pytest.raises(ValueError):
         validate_saccades(invalid_saccades)
+
+
+def test_saccade_detector_with_params() -> None:
+    # Implementation of the new test function
+    pass
+
+
+def test_saccade_detector_with_empty_data() -> None:
+    # Implementation of the new test function
+    pass

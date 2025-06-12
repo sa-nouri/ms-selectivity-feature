@@ -9,7 +9,7 @@ from src.preprocess import (
 )
 
 
-def test_filter_data():
+def test_filter_data() -> None:
     # Test data
     x_positions = np.array([0, 1, 2, 3, 4])
     y_positions = np.array([0, 1, 2, 3, 4])
@@ -24,7 +24,7 @@ def test_filter_data():
     assert not np.any(np.isnan(filtered_y))
 
 
-def test_remove_blinks():
+def test_remove_blinks() -> None:
     # Test data with a blink (gap in data)
     x_positions = np.array([0, 1, 2, 5, 6])
     y_positions = np.array([0, 1, 2, 5, 6])
@@ -39,7 +39,7 @@ def test_remove_blinks():
     assert not np.any(np.isnan(cleaned_y))
 
 
-def test_correct_baseline_drift():
+def test_correct_baseline_drift() -> None:
     # Test data with linear drift
     x_positions = np.array([0, 1, 2, 3, 4])
     y_positions = np.array([0, 2, 4, 6, 8])  # Linear drift with slope 2
@@ -54,7 +54,7 @@ def test_correct_baseline_drift():
     assert np.allclose(y_corrected, np.zeros_like(y_positions), atol=1e-10)
 
 
-def test_interpolate_data():
+def test_interpolate_data() -> None:
     # Test data with non-uniform sampling
     x_positions = np.array([0, 1, 3, 6])
     y_positions = np.array([0, 1, 3, 6])
@@ -72,7 +72,7 @@ def test_interpolate_data():
     assert not np.any(np.isnan(y_inter))
 
 
-def test_low_pass_filter_eye_positions():
+def test_low_pass_filter_eye_positions() -> None:
     # Test data
     x_positions = np.array([0, 1, 2, 3, 4])
     y_positions = np.array([0, 1, 2, 3, 4])
@@ -89,3 +89,28 @@ def test_low_pass_filter_eye_positions():
     assert len(filtered_y) == len(y_positions)
     assert not np.any(np.isnan(filtered_x))
     assert not np.any(np.isnan(filtered_y))
+
+
+def test_preprocess_data() -> None:
+    # ... existing code ...
+    pass
+
+
+def test_preprocess_data_with_params() -> None:
+    # ... existing code ...
+    pass
+
+
+def test_preprocess_data_with_invalid_params() -> None:
+    # ... existing code ...
+    pass
+
+
+def test_preprocess_data_with_empty_data() -> None:
+    # ... existing code ...
+    pass
+
+
+def test_preprocess_data_with_single_point() -> None:
+    # ... existing code ...
+    pass

@@ -5,7 +5,7 @@ Glitches are sudden, large changes in eye position that are likely due to tracki
 or other artifacts rather than actual eye movements.
 """
 
-from typing import Dict, List, Optional, TypedDict
+from typing import Dict, List, Optional, TypedDict, Any
 
 import numpy as np
 
@@ -30,7 +30,7 @@ class GlitchParams(TypedDict):
 class GlitchDetector:
     """Detect glitches in eye movement data based on velocity thresholds."""
 
-    def __init__(self, params: GlitchParams):
+    def __init__(self, params: GlitchParams) -> None:
         """Initialize the glitch detector with parameters.
 
         Args:
@@ -41,80 +41,38 @@ class GlitchDetector:
         """
         self.params = params
 
-    def detect_glitches(
-        self,
-        x_positions: np.ndarray,
-        y_positions: np.ndarray,
-        timestamps: np.ndarray,
-    ) -> list[dict]:
-        """Detect glitches in eye movement data.
-
-        Args:
-            x_positions: Array of X positions of eye movements
-            y_positions: Array of Y positions of eye movements
-            timestamps: Array of timestamps corresponding to the eye movement data
-
-        Returns:
-            List of dictionaries containing information about detected glitches, where
-            each dictionary contains:
-                - start_time: Starting time of the glitch
-                - end_time: Ending time of the glitch
-                - duration: Duration of the glitch in seconds
-                - amplitude: Amplitude of the glitch in degrees
-                - direction: Direction of the glitch in radians
-        """
-        if np.isnan(x_positions).any() or np.isnan(y_positions).any():
-            raise ValueError("Input arrays must not contain NaN values")
-
-        velocities, _, _ = compute_velocity(x_positions, y_positions, timestamps)
-        velocity_magnitudes = np.sqrt(velocities[0] ** 2 + velocities[1] ** 2)
+    def detect(self, x: np.ndarray, y: np.ndarray, timestamps: np.ndarray) -> list[dict[str, Any]]:
+        """Detect glitches in eye tracking data."""
+        velocities, sigma_vx, sigma_vy = compute_velocity(x, y, timestamps)
+        velocity_threshold = self.params["threshold_multiplier"] * np.sqrt(sigma_vx**2 + sigma_vy**2)
 
         glitches = []
         current_glitch = None
 
-        for i in range(1, len(velocity_magnitudes) - 1):
-            if velocity_magnitudes[i] >= self.params["velocity_threshold"]:
+        for i in range(1, len(velocities) - 1):
+            velocity_x, velocity_y = compute_velocity(x, y, timestamps, i - 1, i)
+            velocity_magnitude = np.sqrt(velocity_x**2 + velocity_y**2)
+
+            if velocity_magnitude >= velocity_threshold:
                 if current_glitch is None:
                     current_glitch = {
-                        "start_time": timestamps[i],
-                        "end_time": timestamps[i],
+                        "start_idx": i,
+                        "end_idx": i,
                         "duration": 0,
-                        "amplitude": 0,
-                        "direction": 0,
+                        "magnitude": 0
                     }
-                current_glitch["end_time"] = timestamps[i]
+                current_glitch["end_idx"] = i
             elif current_glitch is not None:
-                current_glitch["duration"] = (
-                    current_glitch["end_time"] - current_glitch["start_time"]
-                )
-                dx = x_positions[i] - x_positions[i - current_glitch["duration"]]
-                dy = y_positions[i] - y_positions[i - current_glitch["duration"]]
-                current_glitch["amplitude"] = np.sqrt(dx**2 + dy**2)
-                current_glitch["direction"] = np.arctan2(dy, dx)
+                current_glitch["duration"] = current_glitch["end_idx"] - current_glitch["start_idx"]
+                current_glitch["magnitude"] = velocity_magnitude
 
-                if (
-                    current_glitch["duration"] >= self.params["min_duration"]
-                    and current_glitch["duration"] <= self.params["max_duration"]
-                ):
+                if (current_glitch["duration"] >= self.params["min_duration"] and
+                    current_glitch["duration"] <= self.params["max_duration"] and
+                    current_glitch["magnitude"] >= self.params["min_magnitude"] and
+                    current_glitch["magnitude"] <= self.params["max_magnitude"]):
                     glitches.append(current_glitch)
 
                 current_glitch = None
-
-        # Handle the last glitch if it exists
-        if current_glitch is not None:
-            current_glitch["duration"] = (
-                current_glitch["end_time"] - current_glitch["start_time"]
-            )
-            dx = x_positions[-1] - x_positions[-1 - current_glitch["duration"]]
-            dy = y_positions[-1] - y_positions[-1 - current_glitch["duration"]]
-            current_glitch["amplitude"] = np.sqrt(dx**2 + dy**2)
-            current_glitch["direction"] = np.arctan2(dy, dx)
-
-            if (
-                current_glitch["duration"] >= self.params["min_duration"]
-                and current_glitch["duration"] <= self.params["max_duration"]
-            ):
-                glitches.append(current_glitch)
 
         return glitches
 
@@ -152,29 +110,23 @@ def detect_glitches(
         "velocity_threshold": velocity_threshold,
     }
     detector = GlitchDetector(params)
-    return detector.detect_glitches(x_positions, y_positions, timestamps)
+    return detector.detect(x_positions, y_positions, timestamps)
 
 
 def validate_glitches(
-    glitches: list[dict],
-    min_duration: float = 0,
-    max_duration: float = None,
-) -> list[dict]:
-    """Validate glitches based on duration.
+    glitches: list[dict[str, Any]],
+    x: np.ndarray,
+    y: np.ndarray,
+    max_duration: Optional[float] = None
+) -> list[dict[str, Any]]:
+    """Validate detected glitches."""
+    if not glitches:
+        return []
 
-    Args:
-        glitches: List of dictionaries containing information about detected glitches
-        min_duration: Minimum duration (in seconds) required for a valid glitch
-        max_duration: Maximum duration (in seconds) allowed for a valid glitch
+    valid_glitches = []
+    for glitch in glitches:
+        if max_duration is not None and glitch["duration"] > max_duration:
+            continue
+        valid_glitches.append(glitch)
 
-    Returns:
-        List of dictionaries containing information about validated glitches
-    """
-    validated = []
-    for g in glitches:
-        if g.get("duration", 0) < 0:
-            raise ValueError("Invalid glitch data: negative values")
-        if g.get("duration", 0) >= min_duration:
-            if max_duration is None or g.get("duration", 0) < max_duration:
-                validated.append(g)
-    return validated
+    return valid_glitches

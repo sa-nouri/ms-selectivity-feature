@@ -6,7 +6,7 @@ from src.postprocess import (
 )
 
 
-def test_noise_threshold_extract():
+def test_noise_threshold_extract() -> None:
     # Test data with two distinct distributions
     data = np.concatenate(
         [
@@ -24,7 +24,7 @@ def test_noise_threshold_extract():
     assert threshold < 10  # Should be closer to noise distribution
 
 
-def test_validate_saccades_min_duration():
+def test_validate_saccades_min_duration() -> None:
     # Test data
     saccades = [(0, 2), (3, 4), (5, 8)]  # (start_index, end_index)
     timestamps = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8])
