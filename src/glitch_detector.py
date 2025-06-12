@@ -61,7 +61,9 @@ class GlitchDetector:
             glitches.append(
                 {
                     "time": timestamps[idx],
-                    "magnitude": np.sqrt(velocities[0][idx] ** 2 + velocities[1][idx] ** 2),
+                    "magnitude": np.sqrt(
+                        velocities[0][idx] ** 2 + velocities[1][idx] ** 2
+                    ),
                 }
             )
 
@@ -132,7 +134,11 @@ def validate_glitches(
             raise ValueError("Negative time in glitch")
         if magnitude is not None and magnitude < min_magnitude:
             continue
-        if max_magnitude is not None and magnitude is not None and magnitude > max_magnitude:
+        if (
+            max_magnitude is not None
+            and magnitude is not None
+            and magnitude > max_magnitude
+        ):
             continue
         validated.append(g)
     return validated

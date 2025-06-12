@@ -47,7 +47,9 @@ class SaccadeDetector:
             saccades.append(
                 {
                     "time": timestamps[idx],
-                    "magnitude": np.sqrt(velocities[0][idx] ** 2 + velocities[1][idx] ** 2),
+                    "magnitude": np.sqrt(
+                        velocities[0][idx] ** 2 + velocities[1][idx] ** 2
+                    ),
                 }
             )
 
@@ -130,9 +132,17 @@ def validate_saccades(
                 raise ValueError("start_time greater than end_time in saccade")
         if duration is not None and duration < min_duration:
             continue
-        if min_amplitude is not None and amplitude is not None and amplitude < min_amplitude:
+        if (
+            min_amplitude is not None
+            and amplitude is not None
+            and amplitude < min_amplitude
+        ):
             continue
-        if max_amplitude is not None and amplitude is not None and amplitude > max_amplitude:
+        if (
+            max_amplitude is not None
+            and amplitude is not None
+            and amplitude > max_amplitude
+        ):
             continue
         validated.append(s)
     return validated

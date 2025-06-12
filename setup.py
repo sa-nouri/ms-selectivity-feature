@@ -12,7 +12,7 @@ setup(
     name="ms-selectivity-feature",
     version="0.1.0",
     author="Salar Nouri",
-    author_email="salar.nouri@epfl.ch",
+    author_email="salr.nouri@gmail.com",
     description="Eye movement detection package",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -34,4 +34,3 @@ setup(
     python_requires=">=3.8",
     install_requires=requirements,
 )
- 

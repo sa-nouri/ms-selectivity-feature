@@ -74,20 +74,20 @@ def remove_blinks(
     """
     # Create mask for non-blink points
     mask = np.ones(len(x_positions), dtype=bool)
-    
+
     # Find points where both x and y are NaN
     nan_mask = np.isnan(x_positions) | np.isnan(y_positions)
-    
+
     # Find points where velocity exceeds threshold
     velocity_magnitude = compute_velocity_magnitude(
         x_positions, y_positions, np.arange(len(x_positions))
     )
     velocity_mask = np.zeros(len(x_positions), dtype=bool)
     velocity_mask[1:] = velocity_magnitude > blink_threshold
-    
+
     # Combine masks
     mask = ~(nan_mask | velocity_mask)
-    
+
     return x_positions[mask], y_positions[mask]
 
 
