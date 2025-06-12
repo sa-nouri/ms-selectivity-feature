@@ -141,11 +141,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 If you use this code in your research, please cite:
 
 ```bibtex
-@article{your-paper,
-  title={Microsaccade Selectivity as Discriminative Feature for Object Decoding},
-  author={Your Name},
-  journal={Journal Name},
-  year={2024}
+@article{nouri2025microsaccade,
+  title={Microsaccade selectivity as discriminative feature for object decoding},
+  author={Nouri, Salar and Tehrani, Amirali Soltani and Faridani, Niloufar and Toosi, Ramin and Noroozi, Jalaledin and Dehaqani, Mohammad-Reza A},
+  journal={Iscience},
+  volume={28},
+  number={1},
+  year={2025},
+  publisher={Elsevier}
 }
 ```
 
