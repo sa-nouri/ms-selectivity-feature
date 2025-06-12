@@ -7,4 +7,7 @@ pandas==2.2.3
 seaborn==0.13.2
 pytest
 black
+isort
+flake8
+mypy
 
