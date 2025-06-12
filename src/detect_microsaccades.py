@@ -1,4 +1,4 @@
-from typing import TypedDict, Any, Optional
+from typing import Any, Optional, TypedDict
 
 import numpy as np
 
@@ -33,10 +33,14 @@ class MicrosaccadeDetector:
         """
         self.params = params
 
-    def detect(self, x: np.ndarray, y: np.ndarray, timestamps: np.ndarray) -> list[dict[str, Any]]:
+    def detect(
+        self, x: np.ndarray, y: np.ndarray, timestamps: np.ndarray
+    ) -> list[dict[str, Any]]:
         """Detect microsaccades in eye tracking data."""
         velocities, sigma_vx, sigma_vy = compute_velocity(x, y, timestamps)
-        velocity_threshold = self.params["threshold_multiplier"] * np.sqrt(sigma_vx**2 + sigma_vy**2)
+        velocity_threshold = self.params["threshold_multiplier"] * np.sqrt(
+            sigma_vx**2 + sigma_vy**2
+        )
 
         microsaccades = []
         current_microsaccade = None
@@ -51,20 +55,34 @@ class MicrosaccadeDetector:
                         "start_idx": i,
                         "end_idx": i,
                         "duration": 0,
-                        "amplitude": 0
+                        "amplitude": 0,
                     }
                 current_microsaccade["end_idx"] = i
             elif current_microsaccade is not None:
-                current_microsaccade["duration"] = current_microsaccade["end_idx"] - current_microsaccade["start_idx"]
+                current_microsaccade["duration"] = (
+                    current_microsaccade["end_idx"] - current_microsaccade["start_idx"]
+                )
                 current_microsaccade["amplitude"] = np.sqrt(
-                    (x[current_microsaccade["end_idx"]] - x[current_microsaccade["start_idx"]])**2 +
-                    (y[current_microsaccade["end_idx"]] - y[current_microsaccade["start_idx"]])**2
+                    (
+                        x[current_microsaccade["end_idx"]]
+                        - x[current_microsaccade["start_idx"]]
+                    )
+                    ** 2
+                    + (
+                        y[current_microsaccade["end_idx"]]
+                        - y[current_microsaccade["start_idx"]]
+                    )
+                    ** 2
                 )
 
-                if (current_microsaccade["duration"] >= self.params["min_duration"] and
-                    current_microsaccade["duration"] <= self.params["max_duration"] and
-                    current_microsaccade["amplitude"] >= self.params["min_amplitude"] and
-                    current_microsaccade["amplitude"] <= self.params["max_amplitude"]):
+                if (
+                    current_microsaccade["duration"] >= self.params["min_duration"]
+                    and current_microsaccade["duration"] <= self.params["max_duration"]
+                    and current_microsaccade["amplitude"]
+                    >= self.params["min_amplitude"]
+                    and current_microsaccade["amplitude"]
+                    <= self.params["max_amplitude"]
+                ):
                     microsaccades.append(current_microsaccade)
 
                 current_microsaccade = None
@@ -119,7 +137,7 @@ def validate_microsaccades(
     x: np.ndarray,
     y: np.ndarray,
     max_duration: Optional[float] = None,
-    max_amplitude: Optional[float] = None
+    max_amplitude: Optional[float] = None,
 ) -> list[dict[str, Any]]:
     """Validate detected microsaccades."""
     if not microsaccades:

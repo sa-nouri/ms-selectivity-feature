@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 from scipy.signal import butter, filtfilt
 
+from src.utils import compute_velocity_magnitude
+
 
 class PreprocessParams(TypedDict):
     """Parameters for preprocessing eye movement data.
@@ -59,35 +61,33 @@ def filter_data(
 
 def remove_blinks(
     x_positions: np.ndarray, y_positions: np.ndarray, blink_threshold: float = 2.0
-) -> Tuple[np.ndarray, np.ndarray]:
-    """Remove blinks from eye movement data.
-
-    This function identifies and removes blink periods from eye movement data
-    based on vertical eye movement amplitude.
+) -> tuple[np.ndarray, np.ndarray]:
+    """Remove blinks from eye tracking data.
 
     Args:
-        x_positions: Array of X positions of eye movements.
-        y_positions: Array of Y positions of eye movements.
-        blink_threshold: Minimum amplitude threshold for blink detection.
-            Defaults to 2.0 degrees.
+        x_positions: X positions
+        y_positions: Y positions
+        blink_threshold: Threshold for blink detection (default: 2.0)
 
     Returns:
-        Tuple containing:
-            - cleaned_x: X positions with blinks removed
-            - cleaned_y: Y positions with blinks removed
+        Tuple of (cleaned_x, cleaned_y)
     """
-    # Detect blinks using amplitude threshold
-    is_blink = np.abs(y_positions) > blink_threshold
-    blink_diff = np.diff(np.hstack([[0], is_blink.astype(int)]))
-    blink_onsets = np.where(blink_diff == 1)[0]
-    blink_offsets = np.where(blink_diff == -1)[0]
-
-    # Create mask for non-blink periods
+    # Create mask for non-blink points
     mask = np.ones(len(x_positions), dtype=bool)
-    for onset, offset in zip(blink_onsets, blink_offsets):
-        mask[onset:offset] = False
-
-    # Return cleaned data
+    
+    # Find points where both x and y are NaN
+    nan_mask = np.isnan(x_positions) | np.isnan(y_positions)
+    
+    # Find points where velocity exceeds threshold
+    velocity_magnitude = compute_velocity_magnitude(
+        x_positions, y_positions, np.arange(len(x_positions))
+    )
+    velocity_mask = np.zeros(len(x_positions), dtype=bool)
+    velocity_mask[1:] = velocity_magnitude > blink_threshold
+    
+    # Combine masks
+    mask = ~(nan_mask | velocity_mask)
+    
     return x_positions[mask], y_positions[mask]
 
 
@@ -155,29 +155,27 @@ def low_pass_filter_eye_positions(
     y_positions: np.ndarray,
     cutoff_frequency: float,
     sampling_rate: float,
-    order: int = 4,
-) -> Tuple[np.ndarray, np.ndarray]:
-    """Apply a low-pass Butterworth filter to eye position data.
-
-    This function applies a Butterworth low-pass filter to smooth eye movement data.
-    The filter is applied to both X and Y positions.
+) -> tuple[np.ndarray, np.ndarray]:
+    """Apply a low-pass filter to eye position data.
 
     Args:
-        x_positions: Array of X positions of eye movements.
-        y_positions: Array of Y positions of eye movements.
-        cutoff_frequency: Cutoff frequency for the low-pass filter in Hz.
-        sampling_rate: Sampling rate of the eye-tracking data in Hz.
-        order: The order of the Butterworth filter. Defaults to 4.
+        x_positions: X positions
+        y_positions: Y positions
+        cutoff_frequency: Cutoff frequency in Hz
+        sampling_rate: Sampling rate in Hz
 
     Returns:
-        Tuple containing:
-            - filtered_x: Filtered X positions
-            - filtered_y: Filtered Y positions
+        Filtered x and y positions
     """
-    nyquist_frequency = 0.5 * sampling_rate
-    normalized_cutoff = cutoff_frequency / nyquist_frequency
-    b, a = butter(order, normalized_cutoff, btype="low", analog=False)
+    if len(x_positions) < 4 or len(y_positions) < 4:
+        return x_positions, y_positions
 
+    # Design filter
+    nyquist = sampling_rate / 2
+    normalized_cutoff = cutoff_frequency / nyquist
+    b, a = butter(2, normalized_cutoff, btype="low")
+
+    # Apply filter
     filtered_x = filtfilt(b, a, x_positions)
     filtered_y = filtfilt(b, a, y_positions)
 

@@ -1,4 +1,4 @@
-from typing import TypedDict, Any, Optional
+from typing import Any, Optional, TypedDict
 
 import numpy as np
 
@@ -14,56 +14,42 @@ class SaccadeParams(TypedDict):
 
 
 class SaccadeDetector:
-    """Detect saccades in eye movement data based on velocity thresholds."""
+    """Detector for saccades in eye tracking data."""
 
-    def __init__(self, params: SaccadeParams) -> None:
-        """Initialize the saccade detector with parameters.
+    def __init__(self, threshold_multiplier: float = 5.0) -> None:
+        """Initialize the saccade detector.
 
         Args:
-            params: Dictionary containing detection parameters:
-                - min_duration: Minimum duration (in seconds) required for a valid saccade
-                - max_duration: Maximum duration (in seconds) allowed for a valid saccade
-                - min_amplitude: Minimum amplitude (in degrees) required for a valid saccade
-                - max_amplitude: Maximum amplitude (in degrees) allowed for a valid saccade
-                - velocity_threshold: Velocity threshold for saccade detection
+            threshold_multiplier: Multiplier for velocity threshold (default: 5.0)
         """
-        self.params = params
+        self.threshold_multiplier = threshold_multiplier
 
-    def detect(self, x: np.ndarray, y: np.ndarray, timestamps: np.ndarray) -> list[dict[str, Any]]:
+    def detect(
+        self, x: np.ndarray, y: np.ndarray, timestamps: np.ndarray
+    ) -> list[dict[str, Any]]:
         """Detect saccades in eye tracking data."""
+        if len(x) < 2 or len(y) < 2 or len(timestamps) < 2:
+            return []
+
         velocities, sigma_vx, sigma_vy = compute_velocity(x, y, timestamps)
-        velocity_threshold = self.params["threshold_multiplier"] * np.sqrt(sigma_vx**2 + sigma_vy**2)
+        velocity_threshold = self.threshold_multiplier * np.sqrt(
+            sigma_vx**2 + sigma_vy**2
+        )
 
+        # Find points where velocity exceeds threshold
+        saccade_indices = np.where(
+            np.sqrt(velocities[0] ** 2 + velocities[1] ** 2) > velocity_threshold
+        )[0]
+
+        # Convert to list of dictionaries
         saccades = []
-        current_saccade = None
-
-        for i in range(1, len(velocities) - 1):
-            velocity_x, velocity_y = compute_velocity(x, y, timestamps, i - 1, i)
-            velocity_magnitude = np.sqrt(velocity_x**2 + velocity_y**2)
-
-            if velocity_magnitude >= velocity_threshold:
-                if current_saccade is None:
-                    current_saccade = {
-                        "start_idx": i,
-                        "end_idx": i,
-                        "duration": 0,
-                        "amplitude": 0
-                    }
-                current_saccade["end_idx"] = i
-            elif current_saccade is not None:
-                current_saccade["duration"] = current_saccade["end_idx"] - current_saccade["start_idx"]
-                current_saccade["amplitude"] = np.sqrt(
-                    (x[current_saccade["end_idx"]] - x[current_saccade["start_idx"]])**2 +
-                    (y[current_saccade["end_idx"]] - y[current_saccade["start_idx"]])**2
-                )
-
-                if (current_saccade["duration"] >= self.params["min_duration"] and
-                    current_saccade["duration"] <= self.params["max_duration"] and
-                    current_saccade["amplitude"] >= self.params["min_amplitude"] and
-                    current_saccade["amplitude"] <= self.params["max_amplitude"]):
-                    saccades.append(current_saccade)
-
-                current_saccade = None
+        for idx in saccade_indices:
+            saccades.append(
+                {
+                    "time": timestamps[idx],
+                    "magnitude": np.sqrt(velocities[0][idx] ** 2 + velocities[1][idx] ** 2),
+                }
+            )
 
         return saccades
 
@@ -111,22 +97,42 @@ def detect_saccades(
 
 
 def validate_saccades(
-    saccades: list[dict[str, Any]],
-    x: np.ndarray,
-    y: np.ndarray,
-    max_duration: Optional[float] = None,
-    max_amplitude: Optional[float] = None
-) -> list[dict[str, Any]]:
-    """Validate detected saccades."""
-    if not saccades:
-        return []
+    saccades: list[dict],
+    min_duration: float = 0.0,
+    min_amplitude: float = None,
+    max_amplitude: float = None,
+) -> list[dict]:
+    """Validate detected saccades.
 
-    valid_saccades = []
-    for saccade in saccades:
-        if max_duration is not None and saccade["duration"] > max_duration:
-            continue
-        if max_amplitude is not None and saccade["amplitude"] > max_amplitude:
-            continue
-        valid_saccades.append(saccade)
+    Args:
+        saccades: List of detected saccades (dicts)
+        min_duration: Minimum duration threshold
+        min_amplitude: Minimum amplitude threshold
+        max_amplitude: Maximum amplitude threshold
 
-    return valid_saccades
+    Returns:
+        List of validated saccades
+    """
+    if not isinstance(saccades, list):
+        raise ValueError("saccades must be a list of dicts")
+    validated = []
+    for s in saccades:
+        if not isinstance(s, dict):
+            raise ValueError("Each saccade must be a dict")
+        duration = s.get("duration", s.get("end_time", 0) - s.get("start_time", 0))
+        amplitude = s.get("amplitude", None)
+        if duration is not None and duration < 0:
+            raise ValueError("Negative duration in saccade")
+        if amplitude is not None and amplitude < 0:
+            raise ValueError("Negative amplitude in saccade")
+        if s.get("start_time") is not None and s.get("end_time") is not None:
+            if s["start_time"] > s["end_time"]:
+                raise ValueError("start_time greater than end_time in saccade")
+        if duration is not None and duration < min_duration:
+            continue
+        if min_amplitude is not None and amplitude is not None and amplitude < min_amplitude:
+            continue
+        if max_amplitude is not None and amplitude is not None and amplitude > max_amplitude:
+            continue
+        validated.append(s)
+    return validated

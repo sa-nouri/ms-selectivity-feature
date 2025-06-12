@@ -1,4 +1,4 @@
-from typing import TypedDict, Optional, Tuple, Any
+from typing import Any, Optional, Tuple, TypedDict
 
 import numpy as np
 
@@ -14,51 +14,26 @@ class VelocityParams(TypedDict):
 
 
 def compute_velocity(
-    x_positions: np.ndarray,
-    y_positions: np.ndarray,
-    timestamps: np.ndarray,
-    start_idx: int = None,
-    end_idx: int = None,
-    params: VelocityParams = None,
+    x: np.ndarray, y: np.ndarray, timestamps: np.ndarray
 ) -> tuple[tuple[np.ndarray, np.ndarray], float, float]:
     """Compute velocity of eye movements.
 
     Args:
-        x_positions: Array of X positions of eye movements.
-        y_positions: Array of Y positions of eye movements.
-        timestamps: Array of timestamps corresponding to the eye movement data.
-        start_idx: Starting index for velocity computation.
-        end_idx: Ending index for velocity computation.
-        params: Dictionary containing velocity computation parameters:
-            - window_size: Size of the window for velocity computation in samples.
+        x: X positions
+        y: Y positions
+        timestamps: Timestamps
 
     Returns:
-        Tuple containing:
-            - Tuple of velocity arrays (vx, vy)
-            - Standard deviation of x velocity
-            - Standard deviation of y velocity
+        Tuple of (velocities, sigma_vx, sigma_vy)
     """
-    if params is None:
-        params = {"window_size": 5}
+    if len(x) < 2 or len(y) < 2 or len(timestamps) < 2:
+        return ((np.array([]), np.array([])), 0.0, 0.0)
 
-    if start_idx is None:
-        start_idx = 0
-    if end_idx is None:
-        end_idx = len(x_positions)
+    # Compute velocity
+    vx = np.diff(x) / np.diff(timestamps)
+    vy = np.diff(y) / np.diff(timestamps)
 
-    # Compute velocity using central difference
-    dt = np.diff(timestamps[start_idx:end_idx])
-    dx = np.diff(x_positions[start_idx:end_idx])
-    dy = np.diff(y_positions[start_idx:end_idx])
-
-    vx = dx / dt
-    vy = dy / dt
-
-    # Pad arrays to match input length
-    vx = np.pad(vx, (1, 0), mode="edge")
-    vy = np.pad(vy, (1, 0), mode="edge")
-
-    # Compute standard deviations
+    # Compute standard deviation
     sigma_vx = np.std(vx)
     sigma_vy = np.std(vy)
 
@@ -66,25 +41,50 @@ def compute_velocity(
 
 
 def compute_amplitude(
-    x_positions: np.ndarray,
-    y_positions: np.ndarray,
-    start_idx: int,
-    end_idx: int,
+    x: np.ndarray, y: np.ndarray, start_idx: int, end_idx: int
 ) -> float:
-    """Compute amplitude of eye movement.
+    """Compute amplitude of eye movement between two points.
 
     Args:
-        x_positions: Array of X positions of eye movements.
-        y_positions: Array of Y positions of eye movements.
-        start_idx: Starting index for amplitude computation.
-        end_idx: Ending index for amplitude computation.
+        x: X positions
+        y: Y positions
+        start_idx: Start index
+        end_idx: End index
 
     Returns:
-        Amplitude of the eye movement in degrees.
+        Amplitude
     """
-    dx = x_positions[end_idx] - x_positions[start_idx]
-    dy = y_positions[end_idx] - y_positions[start_idx]
+    if start_idx < 0 or end_idx >= len(x) or start_idx >= end_idx:
+        return 0.0
+
+    dx = x[end_idx] - x[start_idx]
+    dy = y[end_idx] - y[start_idx]
     return np.sqrt(dx**2 + dy**2)
+
+
+def compute_velocity_magnitude(
+    x: np.ndarray, y: np.ndarray, timestamps: np.ndarray
+) -> np.ndarray:
+    """Compute velocity magnitude from eye position data.
+
+    Args:
+        x: X positions
+        y: Y positions
+        timestamps: Timestamps
+
+    Returns:
+        Array of velocity magnitudes
+    """
+    if len(x) == 0 or len(y) == 0 or len(timestamps) == 0:
+        return np.array([])
+
+    # Compute velocity using central difference
+    dt = np.diff(timestamps)
+    vx = np.diff(x) / dt
+    vy = np.diff(y) / dt
+
+    # Compute velocity magnitude
+    return np.sqrt(vx**2 + vy**2)
 
 
 def compute_direction(
