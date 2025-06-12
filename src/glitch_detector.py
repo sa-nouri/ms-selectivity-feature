@@ -5,8 +5,9 @@ Glitches are sudden, large changes in eye position that are likely due to tracki
 or other artifacts rather than actual eye movements.
 """
 
-import numpy as np
 from typing import Dict, List, Optional
+
+import numpy as np
 
 from .logger import logger
 

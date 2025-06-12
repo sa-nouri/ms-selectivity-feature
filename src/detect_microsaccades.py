@@ -1,8 +1,9 @@
-import numpy as np
-from typing import Dict, List, TypedDict, Optional
+from typing import Dict, List, Optional, TypedDict
 
-from .utils import compute_amplitude, compute_partial_velocity, compute_velocity
+import numpy as np
+
 from .logger import logger
+from .utils import compute_amplitude, compute_partial_velocity, compute_velocity
 
 
 class MicrosaccadeParams(TypedDict):

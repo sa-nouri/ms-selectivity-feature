@@ -1,6 +1,7 @@
+from typing import List, Optional, Tuple, Union
+
 import numpy as np
 from sklearn import mixture
-from typing import List, Tuple, Union, Optional
 
 
 def noise_threshold_extract(

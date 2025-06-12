@@ -1,11 +1,11 @@
 import numpy as np
 
 from src.preprocess import (
-    filter_data,
-    remove_blinks,
     correct_baseline_drift,
+    filter_data,
     interpolate_data,
     low_pass_filter_eye_positions,
+    remove_blinks,
 )
 
 

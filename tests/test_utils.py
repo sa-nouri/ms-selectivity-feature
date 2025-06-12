@@ -1,9 +1,9 @@
 import numpy as np
 
 from src.utils import (
-    compute_velocity,
     compute_amplitude,
     compute_partial_velocity,
+    compute_velocity,
     compute_velocity_consecutive,
 )
 

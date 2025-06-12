@@ -1,5 +1,6 @@
+from typing import Dict, List, Optional, TypedDict
+
 import numpy as np
-from typing import Dict, List, TypedDict, Optional
 
 from .utils import compute_amplitude, compute_partial_velocity, compute_velocity
 

@@ -2,6 +2,7 @@
 
 import numpy as np
 import pytest
+
 from src.detect_saccades import detect_saccades, validate_saccades
 
 

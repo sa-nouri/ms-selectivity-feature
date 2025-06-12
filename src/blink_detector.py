@@ -1,6 +1,7 @@
-import numpy as np
 import copy
-from typing import Dict, Any, Optional, TypedDict
+from typing import Any, Dict, Optional, TypedDict
+
+import numpy as np
 
 from .utils import compute_velocity
 

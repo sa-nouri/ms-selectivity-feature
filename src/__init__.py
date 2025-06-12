@@ -8,21 +8,21 @@ from .blink_detector import BlinkDetectorByEyePositions
 from .detect_microsaccades import detect_microsaccades
 from .detect_saccades import detect_saccades
 from .glitch_detector import detect_glitches
+from .logger import logger, setup_logger
 from .postprocess import noise_threshold_extract, validate_saccades_min_duration
 from .preprocess import (
-    filter_data,
-    remove_blinks,
     correct_baseline_drift,
+    filter_data,
     interpolate_data,
     low_pass_filter_eye_positions,
+    remove_blinks,
 )
 from .utils import (
-    compute_velocity,
     compute_amplitude,
     compute_partial_velocity,
+    compute_velocity,
     compute_velocity_consecutive,
 )
-from .logger import logger, setup_logger
 
 __version__ = "0.1.0"
 __author__ = "Salar Nouri"

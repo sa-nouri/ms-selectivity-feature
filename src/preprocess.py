@@ -1,7 +1,8 @@
+from typing import Optional, Tuple
+
 import numpy as np
 import pandas as pd
 from scipy.signal import butter, filtfilt
-from typing import Tuple, Optional
 
 
 def filter_data(

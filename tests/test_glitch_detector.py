@@ -2,6 +2,7 @@
 
 import numpy as np
 import pytest
+
 from src.glitch_detector import detect_glitches, validate_glitches
 
 

@@ -2,6 +2,7 @@
 
 import numpy as np
 import pytest
+
 from src.blink_detector import detect_blinks, validate_blinks
 
 
