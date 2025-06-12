@@ -14,52 +14,49 @@ class VelocityParams(TypedDict):
 
 
 def compute_velocity(
-    x: np.ndarray, y: np.ndarray, timestamps: np.ndarray
-) -> tuple[tuple[np.ndarray, np.ndarray], float, float]:
-    """Compute velocity of eye movements.
+    x_positions: np.ndarray, y_positions: np.ndarray, timestamps: np.ndarray
+) -> tuple[np.ndarray, float, float]:
+    """Compute velocity between consecutive points.
 
     Args:
-        x: X positions
-        y: Y positions
+        x_positions: X positions
+        y_positions: Y positions
         timestamps: Timestamps
 
     Returns:
         Tuple of (velocities, sigma_vx, sigma_vy)
     """
-    if len(x) < 2 or len(y) < 2 or len(timestamps) < 2:
-        return ((np.array([]), np.array([])), 0.0, 0.0)
+    if len(x_positions) < 2 or len(y_positions) < 2 or len(timestamps) < 2:
+        return np.array([]), 0.0, 0.0
 
-    # Compute velocity
-    vx = np.diff(x) / np.diff(timestamps)
-    vy = np.diff(y) / np.diff(timestamps)
+    dt = np.diff(timestamps)
+    vx = np.diff(x_positions) / dt
+    vy = np.diff(y_positions) / dt
 
-    # Compute standard deviation
-    sigma_vx = np.std(vx)
-    sigma_vy = np.std(vy)
+    # Compute standard deviation of velocities
+    sigma_vx = float(np.std(vx))
+    sigma_vy = float(np.std(vy))
 
-    return (vx, vy), sigma_vx, sigma_vy
+    return np.array([vx, vy]), sigma_vx, sigma_vy
 
 
 def compute_amplitude(
-    x: np.ndarray, y: np.ndarray, start_idx: int, end_idx: int
+    x_positions: np.ndarray, y_positions: np.ndarray, start_idx: int, end_idx: int
 ) -> float:
-    """Compute amplitude of eye movement between two points.
+    """Compute amplitude between two points.
 
     Args:
-        x: X positions
-        y: Y positions
+        x_positions: X positions
+        y_positions: Y positions
         start_idx: Start index
         end_idx: End index
 
     Returns:
         Amplitude
     """
-    if start_idx < 0 or end_idx >= len(x) or start_idx >= end_idx:
-        return 0.0
-
-    dx = x[end_idx] - x[start_idx]
-    dy = y[end_idx] - y[start_idx]
-    return np.sqrt(dx**2 + dy**2)
+    dx = x_positions[end_idx] - x_positions[start_idx]
+    dy = y_positions[end_idx] - y_positions[start_idx]
+    return float(np.sqrt(dx**2 + dy**2))
 
 
 def compute_velocity_magnitude(

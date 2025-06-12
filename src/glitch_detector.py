@@ -5,7 +5,7 @@ Glitches are sudden, large changes in eye position that are likely due to tracki
 or other artifacts rather than actual eye movements.
 """
 
-from typing import Any, Dict, List, Optional, TypedDict
+from typing import Any, Dict, List, Optional, TypedDict, Union
 
 import numpy as np
 
@@ -30,13 +30,16 @@ class GlitchParams(TypedDict):
 class GlitchDetector:
     """Detector for glitches in eye tracking data."""
 
-    def __init__(self, threshold_multiplier: float = 5.0) -> None:
+    def __init__(self, threshold_multiplier: Union[float, dict] = 5.0) -> None:
         """Initialize the glitch detector.
 
         Args:
-            threshold_multiplier: Multiplier for velocity threshold (default: 5.0)
+            threshold_multiplier: Multiplier for velocity threshold (float) or dict of parameters
         """
-        self.threshold_multiplier = threshold_multiplier
+        if isinstance(threshold_multiplier, dict):
+            self.threshold_multiplier = float(threshold_multiplier.get("velocity_threshold", 5.0))
+        else:
+            self.threshold_multiplier = float(threshold_multiplier)
 
     def detect(
         self, x: np.ndarray, y: np.ndarray, timestamps: np.ndarray
@@ -46,27 +49,18 @@ class GlitchDetector:
             return []
 
         velocities, sigma_vx, sigma_vy = compute_velocity(x, y, timestamps)
-        velocity_threshold = self.threshold_multiplier * np.sqrt(
+        velocity_threshold = float(self.threshold_multiplier) * np.sqrt(
             sigma_vx**2 + sigma_vy**2
         )
-
-        # Find points where velocity exceeds threshold
         glitch_indices = np.where(
             np.sqrt(velocities[0] ** 2 + velocities[1] ** 2) > velocity_threshold
         )[0]
-
-        # Convert to list of dictionaries
         glitches = []
         for idx in glitch_indices:
-            glitches.append(
-                {
-                    "time": timestamps[idx],
-                    "magnitude": np.sqrt(
-                        velocities[0][idx] ** 2 + velocities[1][idx] ** 2
-                    ),
-                }
-            )
-
+            glitches.append({
+                "time": timestamps[idx],
+                "magnitude": np.sqrt(velocities[0][idx] ** 2 + velocities[1][idx] ** 2),
+            })
         return glitches
 
 
@@ -114,7 +108,7 @@ def validate_glitches(
     """Validate detected glitches.
 
     Args:
-        glitches: List of detected glitches (dicts)
+        glitches: List of detected glitches (dicts or tuples)
         min_magnitude: Minimum magnitude threshold
         max_magnitude: Maximum magnitude threshold
 
@@ -122,23 +116,27 @@ def validate_glitches(
         List of validated glitches
     """
     if not isinstance(glitches, list):
-        raise ValueError("glitches must be a list of dicts")
+        raise ValueError("glitches must be a list")
     validated = []
     for g in glitches:
-        if not isinstance(g, dict):
-            raise ValueError("Each glitch must be a dict")
-        magnitude = g.get("magnitude", None)
-        if magnitude is not None and magnitude < 0:
+        if isinstance(g, tuple) and len(g) == 2:
+            # Convert tuple to dict
+            g = {"time": g[0], "magnitude": g[1]}
+        elif not isinstance(g, dict):
+            raise ValueError("Each glitch must be a dict or a tuple of (time, magnitude)")
+        
+        # Check for required fields
+        magnitude = float(g.get("magnitude", 0.0))
+        time = g.get("time")
+        
+        if magnitude < 0:
             raise ValueError("Negative magnitude in glitch")
-        if g.get("time") is not None and g["time"] < 0:
+        if time is not None and time < 0:
             raise ValueError("Negative time in glitch")
-        if magnitude is not None and magnitude < min_magnitude:
+        
+        if magnitude < float(min_magnitude):
             continue
-        if (
-            max_magnitude is not None
-            and magnitude is not None
-            and magnitude > max_magnitude
-        ):
+        if max_magnitude is not None and magnitude > float(max_magnitude):
             continue
         validated.append(g)
     return validated

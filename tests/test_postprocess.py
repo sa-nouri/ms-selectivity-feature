@@ -42,3 +42,4 @@ def test_validate_saccades_min_duration() -> None:
         assert (
             duration >= min_duration
         )  # All remaining saccades should meet duration requirement
+ 

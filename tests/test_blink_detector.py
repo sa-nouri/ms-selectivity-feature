@@ -123,3 +123,4 @@ def test_blink_detector_with_empty_data() -> None:
 
     blinks = detect_blinks(x_positions, y_positions, timestamps)
     assert len(blinks) == 0
+ 

@@ -156,7 +156,7 @@ def low_pass_filter_eye_positions(
     cutoff_frequency: float,
     sampling_rate: float,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Apply a low-pass filter to eye position data.
+    """Apply low-pass filter to eye position data.
 
     Args:
         x_positions: X positions
@@ -167,18 +167,14 @@ def low_pass_filter_eye_positions(
     Returns:
         Filtered x and y positions
     """
-    if len(x_positions) < 4 or len(y_positions) < 4:
+    if len(x_positions) < 10:  # Minimum length required for filtfilt
         return x_positions, y_positions
 
-    # Design filter
     nyquist = sampling_rate / 2
     normalized_cutoff = cutoff_frequency / nyquist
     b, a = butter(2, normalized_cutoff, btype="low")
-
-    # Apply filter
     filtered_x = filtfilt(b, a, x_positions)
     filtered_y = filtfilt(b, a, y_positions)
-
     return filtered_x, filtered_y
 
 
