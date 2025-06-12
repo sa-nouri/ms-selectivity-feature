@@ -1,24 +1,65 @@
 import numpy as np
+from typing import Dict, List, TypedDict, Optional
 
 from scripts.utils import (compute_amplitude, compute_partial_velocity,
                            compute_velocity)
 
 
-def detect_saccades(x_positions, y_positions, timestamps, params):
+class SaccadeParams(TypedDict):
+    """Parameters for saccade detection.
+    
+    Attributes:
+        min_duration: Minimum duration (in seconds) required for a valid saccade.
+        threshold_multiplier: Multiplier for sigma_vx and sigma_vy to set velocity threshold.
     """
-    Detect saccades in eye movement data based on changes in gaze direction.
+    min_duration: float
+    threshold_multiplier: float
+
+
+class Saccade(TypedDict):
+    """Information about a detected saccade.
+    
+    Attributes:
+        start: Starting index of the saccade.
+        end: Ending index of the saccade.
+        amplitude: Amplitude of the saccade in degrees.
+        velocity: Velocity of the saccade in degrees per second.
+        duration: Duration of the saccade in seconds.
+    """
+    start: int
+    end: int
+    amplitude: float
+    velocity: float
+    duration: float
+
+
+def detect_saccades(
+    x_positions: np.ndarray,
+    y_positions: np.ndarray,
+    timestamps: np.ndarray,
+    params: SaccadeParams
+) -> List[Saccade]:
+    """Detect saccades in eye movement data based on changes in gaze direction.
+    
+    This function implements a velocity-based algorithm to detect saccades in eye movement data.
+    It uses a combination of velocity thresholds and duration criteria to identify valid saccades.
     
     Args:
-    - x_positions (array): X positions of eye movements.
-    - y_positions (array): Y positions of eye movements.
-    - timestamps (array): Timestamps corresponding to the eye movement data.
-    - params (dict): A dictionary containing:
-        - 'min_duration': Minimum duration (in seconds) required for a valid saccade.
-        - 'threshold_multiplier': Multiplier for sigma_vx and sigma_vy to set velocity threshold.
-        - 'sampling_rate': The sampling rate for interpolation (optional).
+        x_positions: Array of X positions of eye movements.
+        y_positions: Array of Y positions of eye movements.
+        timestamps: Array of timestamps corresponding to the eye movement data.
+        params: Dictionary containing detection parameters:
+            - min_duration: Minimum duration (in seconds) required for a valid saccade.
+            - threshold_multiplier: Multiplier for sigma_vx and sigma_vy to set velocity threshold.
     
     Returns:
-    - list: List of dictionaries containing information about detected saccades.
+        List of dictionaries containing information about detected saccades, where each
+        dictionary contains:
+            - start: Starting index of the saccade
+            - end: Ending index of the saccade
+            - amplitude: Amplitude of the saccade in degrees
+            - velocity: Velocity of the saccade in degrees per second
+            - duration: Duration of the saccade in seconds
     """
     velocities, sigma_vx, sigma_vy = compute_velocity(x_positions, y_positions, timestamps)
     # velocity_threshold = params['threshold_multiplier'] * np.sqrt(sigma_vx**2 + sigma_vy**2)
