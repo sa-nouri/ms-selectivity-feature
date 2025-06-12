@@ -5,7 +5,7 @@ setup(
     version="0.1.0",
     description="Microsaccade Selectivity as Discriminative Feature for Object Decoding",
     author="Salar Nouri",
-    author_email="salar.nouri@epfl.ch",
+    author_email="salr.nouri@gmail.com",
     url="https://github.com/sa-nouri/ms-selectivity-feature",
     package_dir={"": "src"},
     packages=find_packages(where="src"),
