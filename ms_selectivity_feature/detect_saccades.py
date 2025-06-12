@@ -1,8 +1,8 @@
 import numpy as np
 from typing import Dict, List, TypedDict, Optional
 
-from scripts.utils import (compute_amplitude, compute_partial_velocity,
-                           compute_velocity)
+from .utils import (compute_amplitude, compute_partial_velocity,
+                   compute_velocity)
 
 
 class SaccadeParams(TypedDict):

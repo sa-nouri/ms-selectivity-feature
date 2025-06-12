@@ -2,6 +2,8 @@ import numpy as np
 import copy
 from typing import Dict, Any, Optional, TypedDict
 
+from .utils import compute_velocity
+
 
 class BlinkDetectorParams(TypedDict):
     """Parameters for blink detection.
