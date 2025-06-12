@@ -1,0 +1,67 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ms-selectivity-feature"
+version = "0.1.0"
+description = "Microsaccade Selectivity as Discriminative Feature for Object Decoding"
+readme = "README.md"
+authors = [
+    {name = "Salar Nouri", email = "salar.nouri@epfl.ch"},
+]
+license = {file = "LICENSE"}
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=2.1.1",
+    "scikit-learn>=1.5.2",
+    "scipy>=1.14.1",
+    "matplotlib>=3.9.2",
+    "pandas>=2.2.3",
+    "seaborn>=0.13.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black>=24.1.1",
+    "isort>=5.13.2",
+    "flake8>=7.0.0",
+    "pytest>=8.0.0",
+    "pytest-cov>=4.1.0",
+    "mypy>=1.8.0",
+]
+
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+
+[[tool.mypy.overrides]]
+module = ["numpy.*", "pandas.*", "scipy.*", "sklearn.*"]
+ignore_missing_imports = true 
