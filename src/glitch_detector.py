@@ -37,7 +37,9 @@ class GlitchDetector:
             threshold_multiplier: Multiplier for velocity threshold (float) or dict of parameters
         """
         if isinstance(threshold_multiplier, dict):
-            self.threshold_multiplier = float(threshold_multiplier.get("velocity_threshold", 5.0))
+            self.threshold_multiplier = float(
+                threshold_multiplier.get("velocity_threshold", 5.0)
+            )
         else:
             self.threshold_multiplier = float(threshold_multiplier)
 
@@ -57,10 +59,14 @@ class GlitchDetector:
         )[0]
         glitches = []
         for idx in glitch_indices:
-            glitches.append({
-                "time": timestamps[idx],
-                "magnitude": np.sqrt(velocities[0][idx] ** 2 + velocities[1][idx] ** 2),
-            })
+            glitches.append(
+                {
+                    "time": timestamps[idx],
+                    "magnitude": np.sqrt(
+                        velocities[0][idx] ** 2 + velocities[1][idx] ** 2
+                    ),
+                }
+            )
         return glitches
 
 
@@ -123,17 +129,19 @@ def validate_glitches(
             # Convert tuple to dict
             g = {"time": g[0], "magnitude": g[1]}
         elif not isinstance(g, dict):
-            raise ValueError("Each glitch must be a dict or a tuple of (time, magnitude)")
-        
+            raise ValueError(
+                "Each glitch must be a dict or a tuple of (time, magnitude)"
+            )
+
         # Check for required fields
         magnitude = float(g.get("magnitude", 0.0))
         time = g.get("time")
-        
+
         if magnitude < 0:
             raise ValueError("Negative magnitude in glitch")
         if time is not None and time < 0:
             raise ValueError("Negative time in glitch")
-        
+
         if magnitude < float(min_magnitude):
             continue
         if max_magnitude is not None and magnitude > float(max_magnitude):

@@ -71,4 +71,3 @@ def test_compute_velocity_consecutive() -> None:
     assert np.all(x_velocity >= 0)
     assert np.all(y_velocity >= 0)
     assert np.all(pythagorean_velocity >= 0)
- 

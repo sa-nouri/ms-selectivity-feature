@@ -137,4 +137,3 @@ def test_saccade_detector_with_params() -> None:
 def test_saccade_detector_with_empty_data() -> None:
     # Implementation of the new test function
     pass
- 

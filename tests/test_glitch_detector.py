@@ -114,4 +114,3 @@ def test_glitch_detector_with_empty_data() -> None:
 
     glitches = detect_glitches(x_positions, y_positions, timestamps)
     assert len(glitches) == 0
- 

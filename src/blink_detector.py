@@ -22,7 +22,9 @@ class BlinkDetector:
             threshold_multiplier: Multiplier for velocity threshold (float) or dict of parameters
         """
         if isinstance(threshold_multiplier, dict):
-            self.threshold_multiplier = float(threshold_multiplier.get("velocity_threshold", 5.0))
+            self.threshold_multiplier = float(
+                threshold_multiplier.get("velocity_threshold", 5.0)
+            )
         else:
             self.threshold_multiplier = float(threshold_multiplier)
 
@@ -42,10 +44,14 @@ class BlinkDetector:
         )[0]
         blinks = []
         for idx in blink_indices:
-            blinks.append({
-                "time": timestamps[idx],
-                "magnitude": np.sqrt(velocities[0][idx] ** 2 + velocities[1][idx] ** 2),
-            })
+            blinks.append(
+                {
+                    "time": timestamps[idx],
+                    "magnitude": np.sqrt(
+                        velocities[0][idx] ** 2 + velocities[1][idx] ** 2
+                    ),
+                }
+            )
         return blinks
 
 
@@ -66,22 +72,30 @@ def detect_blinks(
         return []
 
     # Check for NaN values
-    if np.isnan(x_positions).any() or np.isnan(y_positions).any() or np.isnan(timestamps).any():
+    if (
+        np.isnan(x_positions).any()
+        or np.isnan(y_positions).any()
+        or np.isnan(timestamps).any()
+    ):
         raise ValueError("Input arrays contain NaN values")
 
-    velocities, sigma_vx, sigma_vy = compute_velocity(x_positions, y_positions, timestamps)
+    velocities, sigma_vx, sigma_vy = compute_velocity(
+        x_positions, y_positions, timestamps
+    )
     velocity_threshold = 5.0 * np.sqrt(sigma_vx**2 + sigma_vy**2)
     blink_indices = np.where(
         np.sqrt(velocities[0] ** 2 + velocities[1] ** 2) > velocity_threshold
     )[0]
     blinks = []
     for idx in blink_indices:
-        blinks.append({
-            "start_time": timestamps[idx],
-            "end_time": timestamps[idx + 1],
-            "duration": timestamps[idx + 1] - timestamps[idx],
-            "amplitude": np.sqrt(velocities[0][idx] ** 2 + velocities[1][idx] ** 2),
-        })
+        blinks.append(
+            {
+                "start_time": timestamps[idx],
+                "end_time": timestamps[idx + 1],
+                "duration": timestamps[idx + 1] - timestamps[idx],
+                "amplitude": np.sqrt(velocities[0][idx] ** 2 + velocities[1][idx] ** 2),
+            }
+        )
     return blinks
 
 
@@ -108,14 +122,21 @@ def validate_blinks(
     for b in blinks:
         if isinstance(b, tuple) and len(b) == 2:
             # Convert tuple to dict
-            b = {"start_time": b[0], "end_time": b[1], "duration": b[1] - b[0], "amplitude": 0.0}
+            b = {
+                "start_time": b[0],
+                "end_time": b[1],
+                "duration": b[1] - b[0],
+                "amplitude": 0.0,
+            }
         elif not isinstance(b, dict):
-            raise ValueError("Each blink must be a dict or a tuple of (start_time, end_time)")
-        
+            raise ValueError(
+                "Each blink must be a dict or a tuple of (start_time, end_time)"
+            )
+
         # Check for required fields
         duration = float(b.get("duration", 0.0))
         amplitude = float(b.get("amplitude", 0.0))
-        
+
         if duration < 0:
             raise ValueError("Negative duration in blink")
         if amplitude < 0:
@@ -123,7 +144,7 @@ def validate_blinks(
         if b.get("start_time") is not None and b.get("end_time") is not None:
             if b["start_time"] > b["end_time"]:
                 raise ValueError("start_time greater than end_time in blink")
-        
+
         if duration < float(min_duration):
             continue
         if min_amplitude is not None and amplitude < float(min_amplitude):

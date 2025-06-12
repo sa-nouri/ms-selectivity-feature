@@ -23,7 +23,9 @@ class SaccadeDetector:
             threshold_multiplier: Multiplier for velocity threshold (float) or dict of parameters
         """
         if isinstance(threshold_multiplier, dict):
-            self.threshold_multiplier = float(threshold_multiplier.get("velocity_threshold", 5.0))
+            self.threshold_multiplier = float(
+                threshold_multiplier.get("velocity_threshold", 5.0)
+            )
         else:
             self.threshold_multiplier = float(threshold_multiplier)
 
@@ -43,10 +45,14 @@ class SaccadeDetector:
         )[0]
         saccades = []
         for idx in saccade_indices:
-            saccades.append({
-                "time": timestamps[idx],
-                "magnitude": np.sqrt(velocities[0][idx] ** 2 + velocities[1][idx] ** 2),
-            })
+            saccades.append(
+                {
+                    "time": timestamps[idx],
+                    "magnitude": np.sqrt(
+                        velocities[0][idx] ** 2 + velocities[1][idx] ** 2
+                    ),
+                }
+            )
         return saccades
 
 
@@ -115,14 +121,22 @@ def validate_saccades(
     for s in saccades:
         if isinstance(s, tuple) and len(s) == 2:
             # Convert tuple to dict
-            s = {"start_time": s[0], "end_time": s[1], "duration": s[1] - s[0], "amplitude": 0.0, "direction": 0.0}
+            s = {
+                "start_time": s[0],
+                "end_time": s[1],
+                "duration": s[1] - s[0],
+                "amplitude": 0.0,
+                "direction": 0.0,
+            }
         elif not isinstance(s, dict):
-            raise ValueError("Each saccade must be a dict or a tuple of (start_time, end_time)")
-        
+            raise ValueError(
+                "Each saccade must be a dict or a tuple of (start_time, end_time)"
+            )
+
         # Check for required fields
         duration = float(s.get("duration", 0.0))
         amplitude = float(s.get("amplitude", 0.0))
-        
+
         if duration < 0:
             raise ValueError("Negative duration in saccade")
         if amplitude < 0:
@@ -130,7 +144,7 @@ def validate_saccades(
         if s.get("start_time") is not None and s.get("end_time") is not None:
             if s["start_time"] > s["end_time"]:
                 raise ValueError("start_time greater than end_time in saccade")
-        
+
         if duration < float(min_duration):
             continue
         if min_amplitude is not None and amplitude < float(min_amplitude):
