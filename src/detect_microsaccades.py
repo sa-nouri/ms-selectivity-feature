@@ -1,143 +1,195 @@
-from typing import Dict, List, Optional, TypedDict
+from typing import TypedDict
 
 import numpy as np
 
-from .logger import logger
-from .utils import compute_amplitude, compute_partial_velocity, compute_velocity
+from .utils import compute_velocity
 
 
 class MicrosaccadeParams(TypedDict):
-    """Parameters for microsaccade detection.
-
-    Attributes:
-        min_duration: Minimum duration (in seconds) required for a valid microsaccade.
-        threshold_multiplier: Multiplier for sigma_vx and sigma_vy to set velocity threshold.
-        amplitude_th: Maximum amplitude threshold for a valid microsaccade.
-    """
-
     min_duration: float
-    threshold_multiplier: float
-    amplitude_th: float
+    max_duration: float
+    min_amplitude: float
+    max_amplitude: float
+    velocity_threshold: float
 
 
-class Microsaccade(TypedDict):
-    """Information about a detected microsaccade.
+class MicrosaccadeDetector:
+    """Detect microsaccades in eye movement data based on velocity thresholds."""
 
-    Attributes:
-        start: Starting index of the microsaccade.
-        end: Ending index of the microsaccade.
-        amplitude: Amplitude of the microsaccade in degrees.
-        velocity: Velocity of the microsaccade in degrees per second.
-        duration: Duration of the microsaccade in seconds.
-    """
+    def __init__(self, params: MicrosaccadeParams):
+        """Initialize the microsaccade detector with parameters.
 
-    start: int
-    end: int
-    amplitude: float
-    velocity: float
-    duration: float
+        Args:
+            params: Dictionary containing detection parameters:
+                - min_duration: Minimum duration (in seconds) required for a valid
+                    microsaccade
+                - max_duration: Maximum duration (in seconds) allowed for a valid
+                    microsaccade
+                - min_amplitude: Minimum amplitude (in degrees) required for a valid
+                    microsaccade
+                - max_amplitude: Maximum amplitude (in degrees) allowed for a valid
+                    microsaccade
+                - velocity_threshold: Velocity threshold for microsaccade detection
+        """
+        self.params = params
+
+    def detect_microsaccades(
+        self,
+        x_positions: np.ndarray,
+        y_positions: np.ndarray,
+        timestamps: np.ndarray,
+    ) -> list[dict]:
+        """Detect microsaccades in eye movement data.
+
+        Args:
+            x_positions: Array of X positions of eye movements
+            y_positions: Array of Y positions of eye movements
+            timestamps: Array of timestamps corresponding to the eye movement data
+
+        Returns:
+            List of dictionaries containing information about detected microsaccades,
+            where each dictionary contains:
+                - start_time: Starting time of the microsaccade
+                - end_time: Ending time of the microsaccade
+                - duration: Duration of the microsaccade in seconds
+                - amplitude: Amplitude of the microsaccade in degrees
+                - direction: Direction of the microsaccade in radians
+        """
+        if np.isnan(x_positions).any() or np.isnan(y_positions).any():
+            raise ValueError("Input arrays must not contain NaN values")
+
+        velocities, _, _ = compute_velocity(x_positions, y_positions, timestamps)
+        velocity_magnitudes = np.sqrt(velocities[0] ** 2 + velocities[1] ** 2)
+
+        microsaccades = []
+        current_microsaccade = None
+
+        for i in range(1, len(velocity_magnitudes) - 1):
+            if velocity_magnitudes[i] >= self.params["velocity_threshold"]:
+                if current_microsaccade is None:
+                    current_microsaccade = {
+                        "start_time": timestamps[i],
+                        "end_time": timestamps[i],
+                        "duration": 0,
+                        "amplitude": 0,
+                        "direction": 0,
+                    }
+                current_microsaccade["end_time"] = timestamps[i]
+            elif current_microsaccade is not None:
+                current_microsaccade["duration"] = (
+                    current_microsaccade["end_time"]
+                    - current_microsaccade["start_time"]
+                )
+                dx = x_positions[i] - x_positions[i - current_microsaccade["duration"]]
+                dy = y_positions[i] - y_positions[i - current_microsaccade["duration"]]
+                current_microsaccade["amplitude"] = np.sqrt(dx**2 + dy**2)
+                current_microsaccade["direction"] = np.arctan2(dy, dx)
+
+                if (
+                    current_microsaccade["duration"] >= self.params["min_duration"]
+                    and current_microsaccade["duration"] <= self.params["max_duration"]
+                    and current_microsaccade["amplitude"]
+                    >= self.params["min_amplitude"]
+                    and current_microsaccade["amplitude"]
+                    <= self.params["max_amplitude"]
+                ):
+                    microsaccades.append(current_microsaccade)
+
+                current_microsaccade = None
+
+        # Handle the last microsaccade if it exists
+        if current_microsaccade is not None:
+            current_microsaccade["duration"] = (
+                current_microsaccade["end_time"] - current_microsaccade["start_time"]
+            )
+            dx = x_positions[-1] - x_positions[-1 - current_microsaccade["duration"]]
+            dy = y_positions[-1] - y_positions[-1 - current_microsaccade["duration"]]
+            current_microsaccade["amplitude"] = np.sqrt(dx**2 + dy**2)
+            current_microsaccade["direction"] = np.arctan2(dy, dx)
+
+            if (
+                current_microsaccade["duration"] >= self.params["min_duration"]
+                and current_microsaccade["duration"] <= self.params["max_duration"]
+                and current_microsaccade["amplitude"] >= self.params["min_amplitude"]
+                and current_microsaccade["amplitude"] <= self.params["max_amplitude"]
+            ):
+                microsaccades.append(current_microsaccade)
+
+        return microsaccades
 
 
 def detect_microsaccades(
     x_positions: np.ndarray,
     y_positions: np.ndarray,
     timestamps: np.ndarray,
-    params: MicrosaccadeParams,
-) -> List[Microsaccade]:
-    """Detect microsaccades in eye movement data based on changes in gaze direction.
-
-    This function implements a velocity-based algorithm to detect microsaccades in eye movement data.
-    It uses a combination of velocity thresholds and duration criteria to identify valid microsaccades.
+    min_duration: float = 0.006,
+    max_duration: float = 0.025,
+    min_amplitude: float = 0.1,
+    max_amplitude: float = 1.0,
+    velocity_threshold: float = 6.0,
+) -> list[dict]:
+    """Detect microsaccades in eye movement data.
 
     Args:
-        x_positions: Array of X positions of eye movements.
-        y_positions: Array of Y positions of eye movements.
-        timestamps: Array of timestamps corresponding to the eye movement data.
-        params: Dictionary containing detection parameters:
-            - min_duration: Minimum duration (in seconds) required for a valid microsaccade.
-            - threshold_multiplier: Multiplier for sigma_vx and sigma_vy to set velocity threshold.
-            - amplitude_th: Maximum amplitude threshold for a valid microsaccade.
+        x_positions: Array of X positions of eye movements
+        y_positions: Array of Y positions of eye movements
+        timestamps: Array of timestamps corresponding to the eye movement data
+        min_duration: Minimum duration (in seconds) required for a valid microsaccade
+        max_duration: Maximum duration (in seconds) allowed for a valid microsaccade
+        min_amplitude: Minimum amplitude (in degrees) required for a valid microsaccade
+        max_amplitude: Maximum amplitude (in degrees) allowed for a valid microsaccade
+        velocity_threshold: Velocity threshold for microsaccade detection
 
     Returns:
-        List of dictionaries containing information about detected microsaccades, where each
-        dictionary contains:
-            - start: Starting index of the microsaccade
-            - end: Ending index of the microsaccade
-            - amplitude: Amplitude of the microsaccade in degrees
-            - velocity: Velocity of the microsaccade in degrees per second
+        List of dictionaries containing information about detected microsaccades, where
+        each dictionary contains:
+            - start_time: Starting time of the microsaccade
+            - end_time: Ending time of the microsaccade
             - duration: Duration of the microsaccade in seconds
+            - amplitude: Amplitude of the microsaccade in degrees
+            - direction: Direction of the microsaccade in radians
     """
-    logger.info("Starting microsaccade detection")
-    logger.debug(
-        f"Parameters: min_duration={params['min_duration']}, "
-        f"threshold_multiplier={params['threshold_multiplier']}, "
-        f"amplitude_th={params['amplitude_th']}"
-    )
+    params = {
+        "min_duration": min_duration,
+        "max_duration": max_duration,
+        "min_amplitude": min_amplitude,
+        "max_amplitude": max_amplitude,
+        "velocity_threshold": velocity_threshold,
+    }
+    detector = MicrosaccadeDetector(params)
+    return detector.detect_microsaccades(x_positions, y_positions, timestamps)
 
-    velocities, sigma_vx, sigma_vy = compute_velocity(
-        x_positions, y_positions, timestamps
-    )
-    velocity_threshold = params["threshold_multiplier"] * np.sqrt(
-        sigma_vx**2 + sigma_vy**2
-    )
 
-    microsaccades = []
-    current_saccade = None
-    microsaccade_start = None
+def validate_microsaccades(
+    microsaccades: list[dict],
+    min_duration: float = 0,
+    max_duration: float = None,
+    min_amplitude: float = 0,
+    max_amplitude: float = None,
+) -> list[dict]:
+    """Validate microsaccades based on duration and amplitude.
 
-    for i in range(1, len(velocities) - 1):
-        velocity_x, velocity_y = compute_partial_velocity(
-            x_positions, y_positions, timestamps, i - 1, i
-        )
-        velocity_magnitude = np.sqrt(velocity_x**2 + velocity_y**2)
+    Args:
+        microsaccades: List of dictionaries containing information about detected
+            microsaccades
+        min_duration: Minimum duration (in seconds) required for a valid microsaccade
+        max_duration: Maximum duration (in seconds) allowed for a valid microsaccade
+        min_amplitude: Minimum amplitude (in degrees) required for a valid microsaccade
+        max_amplitude: Maximum amplitude (in degrees) allowed for a valid microsaccade
 
-        if velocity_magnitude >= velocity_threshold:
-            if current_saccade is None:
-                microsaccade_start = i
-                current_saccade = {
-                    "start": i,
-                    "end": i,
-                    "amplitude": 0,
-                    "velocity": 0,
-                    "duration": 0,
-                }
-            current_saccade["end"] = i
-        elif current_saccade is not None:
-            current_saccade["duration"] = (
-                timestamps[current_saccade["end"]] - timestamps[microsaccade_start]
-            )
-
-            if current_saccade["duration"] >= params["min_duration"]:
-                current_saccade["amplitude"] = compute_amplitude(
-                    x_positions, y_positions, microsaccade_start, current_saccade["end"]
-                )
-                current_saccade["velocity"] = (
-                    current_saccade["amplitude"] / current_saccade["duration"]
-                )
-
-                # Check amplitude threshold after computing amplitude
-                if current_saccade["amplitude"] <= params["amplitude_th"]:
-                    microsaccades.append(current_saccade)
-
-            current_saccade = None
-            microsaccade_start = None
-
-    # Handle the last microsaccade if it exists
-    if current_saccade is not None:
-        current_saccade["duration"] = (
-            timestamps[current_saccade["end"]] - timestamps[microsaccade_start]
-        )
-        if current_saccade["duration"] >= params["min_duration"]:
-            current_saccade["amplitude"] = compute_amplitude(
-                x_positions, y_positions, microsaccade_start, current_saccade["end"]
-            )
-            current_saccade["velocity"] = (
-                current_saccade["amplitude"] / current_saccade["duration"]
-            )
-
-            # Check amplitude threshold after computing amplitude
-            if current_saccade["amplitude"] <= params["amplitude_th"]:
-                microsaccades.append(current_saccade)
-
-    logger.info(f"Found {len(microsaccades)} microsaccades")
-    return microsaccades
+    Returns:
+        List of dictionaries containing information about validated microsaccades
+    """
+    validated = []
+    for m in microsaccades:
+        if m.get("duration", 0) < 0 or m.get("amplitude", 0) < 0:
+            raise ValueError("Invalid microsaccade data: negative values")
+        if (
+            m.get("duration", 0) >= min_duration
+            and m.get("amplitude", 0) >= min_amplitude
+        ):
+            if (max_duration is None or m.get("duration", 0) < max_duration) and (
+                max_amplitude is None or m.get("amplitude", 0) < max_amplitude
+            ):
+                validated.append(m)
+    return validated

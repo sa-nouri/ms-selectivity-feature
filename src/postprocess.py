@@ -1,7 +1,19 @@
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, TypedDict, Union
 
 import numpy as np
 from sklearn import mixture
+
+
+class PostprocessParams(TypedDict):
+    """Parameters for postprocessing eye movement data.
+
+    Attributes:
+        min_interval: Minimum interval between events in seconds.
+        max_interval: Maximum interval between events in seconds.
+    """
+
+    min_interval: float
+    max_interval: float
 
 
 def noise_threshold_extract(
@@ -87,3 +99,85 @@ def validate_saccades_min_duration(
             )
 
     return valid_saccades
+
+
+def postprocess_data(
+    events: list[dict],
+    timestamps: np.ndarray,
+    params: PostprocessParams,
+) -> list[dict]:
+    """Postprocess detected eye movement events by merging and filtering.
+
+    Args:
+        events: List of dictionaries containing information about detected events.
+        timestamps: Array of timestamps corresponding to the eye movement data.
+        params: Dictionary containing postprocessing parameters:
+            - min_interval: Minimum interval between events in seconds.
+            - max_interval: Maximum interval between events in seconds.
+
+    Returns:
+        List of dictionaries containing information about postprocessed events.
+    """
+    if not events:
+        return []
+
+    # Sort events by start time
+    sorted_events = sorted(events, key=lambda x: x["start_time"])
+
+    # Merge events that are too close together
+    merged_events = []
+    current_event = sorted_events[0]
+
+    for next_event in sorted_events[1:]:
+        interval = next_event["start_time"] - current_event["end_time"]
+        if interval < params["min_interval"]:
+            # Merge events
+            current_event["end_time"] = next_event["end_time"]
+            current_event["duration"] = (
+                current_event["end_time"] - current_event["start_time"]
+            )
+            if "amplitude" in current_event and "amplitude" in next_event:
+                current_event["amplitude"] = max(
+                    current_event["amplitude"], next_event["amplitude"]
+                )
+        else:
+            # Check if the current event is valid
+            if (
+                current_event["duration"] >= params["min_interval"]
+                and current_event["duration"] <= params["max_interval"]
+            ):
+                merged_events.append(current_event)
+            current_event = next_event
+
+    # Add the last event if it's valid
+    if (
+        current_event["duration"] >= params["min_interval"]
+        and current_event["duration"] <= params["max_interval"]
+    ):
+        merged_events.append(current_event)
+
+    return merged_events
+
+
+def postprocess(
+    events: list[dict],
+    timestamps: np.ndarray,
+    min_interval: float = 0.02,
+    max_interval: float = 0.4,
+) -> list[dict]:
+    """Postprocess detected eye movement events with default parameters.
+
+    Args:
+        events: List of dictionaries containing information about detected events.
+        timestamps: Array of timestamps corresponding to the eye movement data.
+        min_interval: Minimum interval between events in seconds.
+        max_interval: Maximum interval between events in seconds.
+
+    Returns:
+        List of dictionaries containing information about postprocessed events.
+    """
+    params = {
+        "min_interval": min_interval,
+        "max_interval": max_interval,
+    }
+    return postprocess_data(events, timestamps, params)

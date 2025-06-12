@@ -1,87 +1,112 @@
-from typing import Optional, Tuple, Union
+from typing import TypedDict
 
 import numpy as np
+
+
+class VelocityParams(TypedDict):
+    """Parameters for velocity computation.
+
+    Attributes:
+        window_size: Size of the window for velocity computation in samples.
+    """
+
+    window_size: int
 
 
 def compute_velocity(
     x_positions: np.ndarray,
     y_positions: np.ndarray,
     timestamps: np.ndarray,
-    apply_smoothing: bool = False,
-) -> Tuple[np.ndarray, float, float]:
-    """Compute the velocity of eye movements based on the two-point method.
-
-    This function computes eye movement velocities using the two-point method, applies interpolation
-    for missing data, optionally applies a five-point running average, and calculates the median-based
-    standard deviation of the horizontal and vertical velocity components.
+    start_idx: int = None,
+    end_idx: int = None,
+    params: VelocityParams = None,
+) -> tuple[tuple[np.ndarray, np.ndarray], float, float]:
+    """Compute velocity of eye movements.
 
     Args:
         x_positions: Array of X positions of eye movements.
         y_positions: Array of Y positions of eye movements.
-        timestamps: Array of timestamps corresponding to each eye movement position.
-        apply_smoothing: Whether to apply a five-point running average to smooth velocities.
-            Defaults to False.
+        timestamps: Array of timestamps corresponding to the eye movement data.
+        start_idx: Starting index for velocity computation.
+        end_idx: Ending index for velocity computation.
+        params: Dictionary containing velocity computation parameters:
+            - window_size: Size of the window for velocity computation in samples.
 
     Returns:
         Tuple containing:
-            - velocities: Array of smoothed velocity values for each time point.
-            - sigma_vx: Median-based standard deviation for the horizontal (x) gaze positions.
-            - sigma_vy: Median-based standard deviation for the vertical (y) gaze positions.
+            - Tuple of velocity arrays (vx, vy)
+            - Standard deviation of x velocity
+            - Standard deviation of y velocity
     """
-    valid_indices = ~np.isnan(x_positions) & ~np.isnan(y_positions)
-    x_positions = np.interp(
-        timestamps, timestamps[valid_indices], x_positions[valid_indices]
-    )
-    y_positions = np.interp(
-        timestamps, timestamps[valid_indices], y_positions[valid_indices]
-    )
+    if params is None:
+        params = {"window_size": 5}
 
-    velocities = []
-    for i in range(1, len(timestamps)):
-        dx = x_positions[i] - x_positions[i - 1]
-        dy = y_positions[i] - y_positions[i - 1]
-        dt = timestamps[i] - timestamps[i - 1]
-        velocity = np.sqrt(dx**2 + dy**2) / dt
-        velocities.append(velocity)
+    if start_idx is None:
+        start_idx = 0
+    if end_idx is None:
+        end_idx = len(x_positions)
 
-    velocities = np.array(velocities)
-    # velocities *= 1e3  # degree per second
+    # Compute velocity using central difference
+    dt = np.diff(timestamps[start_idx:end_idx])
+    dx = np.diff(x_positions[start_idx:end_idx])
+    dy = np.diff(y_positions[start_idx:end_idx])
 
-    if apply_smoothing:
-        velocities = np.convolve(velocities, np.ones(5) / 5, mode="same")
-        velocities[:2] = velocities[2]  # Handle edge cases for smoothing
-        velocities[-2:] = velocities[-3]
+    vx = dx / dt
+    vy = dy / dt
 
-    vx = np.diff(x_positions) / np.diff(timestamps)
-    vy = np.diff(y_positions) / np.diff(timestamps)
+    # Pad arrays to match input length
+    vx = np.pad(vx, (1, 0), mode="edge")
+    vy = np.pad(vy, (1, 0), mode="edge")
 
-    sigma_vx = np.sqrt(np.median((vx - np.median(vx)) ** 2))
-    sigma_vy = np.sqrt(np.median((vy - np.median(vy)) ** 2))
+    # Compute standard deviations
+    sigma_vx = np.std(vx)
+    sigma_vy = np.std(vy)
 
-    return velocities, sigma_vx, sigma_vy
+    return (vx, vy), sigma_vx, sigma_vy
 
 
 def compute_amplitude(
-    x_positions: np.ndarray, y_positions: np.ndarray, start_index: int, end_index: int
+    x_positions: np.ndarray,
+    y_positions: np.ndarray,
+    start_idx: int,
+    end_idx: int,
 ) -> float:
-    """Compute the amplitude of an eye movement from start to end positions.
+    """Compute amplitude of eye movement.
 
     Args:
         x_positions: Array of X positions of eye movements.
         y_positions: Array of Y positions of eye movements.
-        start_index: Starting index of the eye movement.
-        end_index: Ending index of the movement.
+        start_idx: Starting index for amplitude computation.
+        end_idx: Ending index for amplitude computation.
 
     Returns:
-        The total amplitude of the eye movement (displacement) in degrees.
+        Amplitude of the eye movement in degrees.
     """
+    dx = x_positions[end_idx] - x_positions[start_idx]
+    dy = y_positions[end_idx] - y_positions[start_idx]
+    return np.sqrt(dx**2 + dy**2)
 
-    dx = x_positions[end_index] - x_positions[start_index]
-    dy = y_positions[end_index] - y_positions[start_index]
 
-    amplitude = np.sqrt(dx**2 + dy**2)
+def compute_direction(
+    x_positions: np.ndarray,
+    y_positions: np.ndarray,
+    start_idx: int,
+    end_idx: int,
+) -> float:
+    """Compute direction of eye movement.
 
-    return amplitude
+    Args:
+        x_positions: Array of X positions of eye movements.
+        y_positions: Array of Y positions of eye movements.
+        start_idx: Starting index for direction computation.
+        end_idx: Ending index for direction computation.
+
+    Returns:
+        Direction of the eye movement in radians.
+    """
+    dx = x_positions[end_idx] - x_positions[start_idx]
+    dy = y_positions[end_idx] - y_positions[start_idx]
+    return np.arctan2(dy, dx)
 
 
 def compute_partial_velocity(

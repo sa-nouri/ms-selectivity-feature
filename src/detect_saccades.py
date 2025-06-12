@@ -1,133 +1,177 @@
-from typing import Dict, List, Optional, TypedDict
+from typing import TypedDict
 
 import numpy as np
 
-from .utils import compute_amplitude, compute_partial_velocity, compute_velocity
+from .utils import compute_velocity
 
 
 class SaccadeParams(TypedDict):
-    """Parameters for saccade detection.
-
-    Attributes:
-        min_duration: Minimum duration (in seconds) required for a valid saccade.
-        threshold_multiplier: Multiplier for sigma_vx and sigma_vy to set velocity threshold.
-    """
-
     min_duration: float
-    threshold_multiplier: float
+    max_duration: float
+    min_amplitude: float
+    max_amplitude: float
+    velocity_threshold: float
 
 
-class Saccade(TypedDict):
-    """Information about a detected saccade.
+class SaccadeDetector:
+    """Detect saccades in eye movement data based on velocity thresholds."""
 
-    Attributes:
-        start: Starting index of the saccade.
-        end: Ending index of the saccade.
-        amplitude: Amplitude of the saccade in degrees.
-        velocity: Velocity of the saccade in degrees per second.
-        duration: Duration of the saccade in seconds.
-    """
+    def __init__(self, params: SaccadeParams):
+        """Initialize the saccade detector with parameters.
 
-    start: int
-    end: int
-    amplitude: float
-    velocity: float
-    duration: float
+        Args:
+            params: Dictionary containing detection parameters:
+                - min_duration: Minimum duration (in seconds) required for a valid saccade
+                - max_duration: Maximum duration (in seconds) allowed for a valid saccade
+                - min_amplitude: Minimum amplitude (in degrees) required for a valid saccade
+                - max_amplitude: Maximum amplitude (in degrees) allowed for a valid saccade
+                - velocity_threshold: Velocity threshold for saccade detection
+        """
+        self.params = params
+
+    def detect_saccades(
+        self,
+        x_positions: np.ndarray,
+        y_positions: np.ndarray,
+        timestamps: np.ndarray,
+    ) -> list[dict]:
+        """Detect saccades in eye movement data.
+
+        Args:
+            x_positions: Array of X positions of eye movements
+            y_positions: Array of Y positions of eye movements
+            timestamps: Array of timestamps corresponding to the eye movement data
+
+        Returns:
+            List of dictionaries containing information about detected saccades, where
+            each dictionary contains:
+                - start_time: Starting time of the saccade
+                - end_time: Ending time of the saccade
+                - duration: Duration of the saccade in seconds
+                - amplitude: Amplitude of the saccade in degrees
+                - direction: Direction of the saccade in radians
+        """
+        if np.isnan(x_positions).any() or np.isnan(y_positions).any():
+            raise ValueError("Input arrays must not contain NaN values")
+
+        velocities, _, _ = compute_velocity(x_positions, y_positions, timestamps)
+        velocity_magnitudes = np.sqrt(velocities[0] ** 2 + velocities[1] ** 2)
+
+        saccades = []
+        current_saccade = None
+
+        for i in range(1, len(velocity_magnitudes) - 1):
+            if velocity_magnitudes[i] >= self.params["velocity_threshold"]:
+                if current_saccade is None:
+                    current_saccade = {
+                        "start_time": timestamps[i],
+                        "end_time": timestamps[i],
+                        "duration": 0,
+                        "amplitude": 0,
+                        "direction": 0,
+                    }
+                current_saccade["end_time"] = timestamps[i]
+            elif current_saccade is not None:
+                current_saccade["duration"] = (
+                    current_saccade["end_time"] - current_saccade["start_time"]
+                )
+                dx = x_positions[i] - x_positions[i - current_saccade["duration"]]
+                dy = y_positions[i] - y_positions[i - current_saccade["duration"]]
+                current_saccade["amplitude"] = np.sqrt(dx**2 + dy**2)
+                current_saccade["direction"] = np.arctan2(dy, dx)
+
+                if (
+                    current_saccade["duration"] >= self.params["min_duration"]
+                    and current_saccade["duration"] <= self.params["max_duration"]
+                    and current_saccade["amplitude"] >= self.params["min_amplitude"]
+                    and current_saccade["amplitude"] <= self.params["max_amplitude"]
+                ):
+                    saccades.append(current_saccade)
+
+                current_saccade = None
+
+        # Handle the last saccade if it exists
+        if current_saccade is not None:
+            current_saccade["duration"] = (
+                current_saccade["end_time"] - current_saccade["start_time"]
+            )
+            dx = x_positions[-1] - x_positions[-1 - current_saccade["duration"]]
+            dy = y_positions[-1] - y_positions[-1 - current_saccade["duration"]]
+            current_saccade["amplitude"] = np.sqrt(dx**2 + dy**2)
+            current_saccade["direction"] = np.arctan2(dy, dx)
+
+            if (
+                current_saccade["duration"] >= self.params["min_duration"]
+                and current_saccade["duration"] <= self.params["max_duration"]
+                and current_saccade["amplitude"] >= self.params["min_amplitude"]
+                and current_saccade["amplitude"] <= self.params["max_amplitude"]
+            ):
+                saccades.append(current_saccade)
+
+        return saccades
 
 
 def detect_saccades(
     x_positions: np.ndarray,
     y_positions: np.ndarray,
     timestamps: np.ndarray,
-    params: SaccadeParams,
-) -> List[Saccade]:
-    """Detect saccades in eye movement data based on changes in gaze direction.
-
-    This function implements a velocity-based algorithm to detect saccades in eye movement data.
-    It uses a combination of velocity thresholds and duration criteria to identify valid saccades.
+    min_duration: float = 0.02,
+    max_duration: float = 0.1,
+    min_amplitude: float = 0.5,
+    max_amplitude: float = 20.0,
+    velocity_threshold: float = 30.0,
+) -> list[dict]:
+    """Detect saccades in eye movement data.
 
     Args:
-        x_positions: Array of X positions of eye movements.
-        y_positions: Array of Y positions of eye movements.
-        timestamps: Array of timestamps corresponding to the eye movement data.
-        params: Dictionary containing detection parameters:
-            - min_duration: Minimum duration (in seconds) required for a valid saccade.
-            - threshold_multiplier: Multiplier for sigma_vx and sigma_vy to set velocity threshold.
+        x_positions: Array of X positions of eye movements
+        y_positions: Array of Y positions of eye movements
+        timestamps: Array of timestamps corresponding to the eye movement data
+        min_duration: Minimum duration (in seconds) required for a valid saccade
+        max_duration: Maximum duration (in seconds) allowed for a valid saccade
+        min_amplitude: Minimum amplitude (in degrees) required for a valid saccade
+        max_amplitude: Maximum amplitude (in degrees) allowed for a valid saccade
+        velocity_threshold: Velocity threshold for saccade detection
 
     Returns:
         List of dictionaries containing information about detected saccades, where each
         dictionary contains:
             - start_time: Starting time of the saccade
             - end_time: Ending time of the saccade
-            - duration: Duration of the saccade in milliseconds
+            - duration: Duration of the saccade in seconds
             - amplitude: Amplitude of the saccade in degrees
-            - direction: Direction of the saccade in degrees
+            - direction: Direction of the saccade in radians
     """
-    # Check for NaN values
-    if np.isnan(x_positions).any() or np.isnan(y_positions).any():
-        raise ValueError("Input arrays must not contain NaN values")
-
-    if len(x_positions) == 0 or np.all(x_positions == x_positions[0]):
-        return []
-
-    velocities, sigma_vx, sigma_vy = compute_velocity(
-        x_positions, y_positions, timestamps
-    )
-    velocity_threshold = params["threshold_multiplier"] * np.sqrt(
-        sigma_vx**2 + sigma_vy**2
-    )
-
-    saccades = []
-    current_saccade = None
-    saccade_start = None
-
-    for i in range(1, len(velocities) - 1):
-        velocity_x, velocity_y = compute_partial_velocity(
-            x_positions, y_positions, timestamps, i - 1, i
-        )
-        velocity_magnitude = np.sqrt(velocity_x**2 + velocity_y**2)
-
-        if velocity_magnitude >= velocity_threshold:
-            if current_saccade is None:
-                saccade_start = i
-                current_saccade = {
-                    "start_time": timestamps[i],
-                    "end_time": timestamps[i],
-                    "duration": 0,
-                    "amplitude": 0,
-                    "direction": np.degrees(np.arctan2(velocity_y, velocity_x)),
-                }
-            current_saccade["end_time"] = timestamps[i]
-        elif current_saccade is not None:
-            current_saccade["duration"] = (
-                current_saccade["end_time"] - current_saccade["start_time"]
-            )
-
-            if current_saccade["duration"] >= params["min_duration"]:
-                current_saccade["amplitude"] = compute_amplitude(
-                    x_positions, y_positions, saccade_start, i - 1
-                )
-                saccades.append(current_saccade)
-
-            current_saccade = None
-            saccade_start = None
-
-    # Handle the last saccade if it exists
-    if current_saccade is not None:
-        current_saccade["duration"] = (
-            current_saccade["end_time"] - current_saccade["start_time"]
-        )
-        if current_saccade["duration"] >= params["min_duration"]:
-            current_saccade["amplitude"] = compute_amplitude(
-                x_positions, y_positions, saccade_start, len(x_positions) - 1
-            )
-            saccades.append(current_saccade)
-
-    return saccades
+    params = {
+        "min_duration": min_duration,
+        "max_duration": max_duration,
+        "min_amplitude": min_amplitude,
+        "max_amplitude": max_amplitude,
+        "velocity_threshold": velocity_threshold,
+    }
+    detector = SaccadeDetector(params)
+    return detector.detect_saccades(x_positions, y_positions, timestamps)
 
 
-def validate_saccades(saccades, min_duration=0, min_amplitude=0, max_amplitude=None):
-    """Validate saccades based on duration and amplitude for test compatibility."""
+def validate_saccades(
+    saccades: list[dict],
+    min_duration: float = 0,
+    max_duration: float = None,
+    min_amplitude: float = 0,
+    max_amplitude: float = None,
+) -> list[dict]:
+    """Validate saccades based on duration and amplitude.
+
+    Args:
+        saccades: List of dictionaries containing information about detected saccades
+        min_duration: Minimum duration (in seconds) required for a valid saccade
+        max_duration: Maximum duration (in seconds) allowed for a valid saccade
+        min_amplitude: Minimum amplitude (in degrees) required for a valid saccade
+        max_amplitude: Maximum amplitude (in degrees) allowed for a valid saccade
+
+    Returns:
+        List of dictionaries containing information about validated saccades
+    """
     validated = []
     for s in saccades:
         if s.get("duration", 0) < 0 or s.get("amplitude", 0) < 0:
@@ -136,21 +180,8 @@ def validate_saccades(saccades, min_duration=0, min_amplitude=0, max_amplitude=N
             s.get("duration", 0) >= min_duration
             and s.get("amplitude", 0) >= min_amplitude
         ):
-            if max_amplitude is None or s.get("amplitude", 0) < max_amplitude:
+            if (max_duration is None or s.get("duration", 0) < max_duration) and (
+                max_amplitude is None or s.get("amplitude", 0) < max_amplitude
+            ):
                 validated.append(s)
     return validated
-
-
-def detect_saccades(
-    x_positions, y_positions, timestamps, min_duration=50, threshold_multiplier=6.0
-):
-    """Test-compatible wrapper for detect_saccades with default params."""
-    params = {
-        "min_duration": min_duration,
-        "threshold_multiplier": threshold_multiplier,
-    }
-    return _detect_saccades_impl(x_positions, y_positions, timestamps, params)
-
-
-# Save the original implementation for the wrapper
-_detect_saccades_impl = detect_saccades

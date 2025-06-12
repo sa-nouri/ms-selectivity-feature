@@ -75,4 +75,12 @@ ignore_missing_imports = true
 
 [tool.setuptools]
 package-dir = {"" = "src"}
-packages = {find = {where = ["src"]}} 
+packages = {find = {where = ["src"]}}
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = "E203"
+exclude = ["venv", ".git", "build", "dist"]
+per-file-ignores = [
+    "__init__.py:F401",
+] 

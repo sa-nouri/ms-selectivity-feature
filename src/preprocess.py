@@ -1,8 +1,22 @@
-from typing import Optional, Tuple
+from typing import Optional, Tuple, TypedDict
 
 import numpy as np
 import pandas as pd
 from scipy.signal import butter, filtfilt
+
+
+class PreprocessParams(TypedDict):
+    """Parameters for preprocessing eye movement data.
+
+    Attributes:
+        sampling_rate: Sampling rate of the eye movement data in Hz.
+        filter_order: Order of the Butterworth filter.
+        cutoff_freq: Cutoff frequency for the Butterworth filter in Hz.
+    """
+
+    sampling_rate: float
+    filter_order: int
+    cutoff_freq: float
 
 
 def filter_data(
@@ -168,3 +182,83 @@ def low_pass_filter_eye_positions(
     filtered_y = filtfilt(b, a, y_positions)
 
     return filtered_x, filtered_y
+
+
+def preprocess_data(
+    x_positions: np.ndarray,
+    y_positions: np.ndarray,
+    timestamps: np.ndarray,
+    params: PreprocessParams,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Preprocess eye movement data by filtering and interpolating.
+
+    Args:
+        x_positions: Array of X positions of eye movements.
+        y_positions: Array of Y positions of eye movements.
+        timestamps: Array of timestamps corresponding to the eye movement data.
+        params: Dictionary containing preprocessing parameters:
+            - sampling_rate: Sampling rate of the eye movement data in Hz.
+            - filter_order: Order of the Butterworth filter.
+            - cutoff_freq: Cutoff frequency for the Butterworth filter in Hz.
+
+    Returns:
+        Tuple containing:
+            - Filtered and interpolated X positions
+            - Filtered and interpolated Y positions
+            - Interpolated timestamps
+    """
+    if np.isnan(x_positions).any() or np.isnan(y_positions).any():
+        raise ValueError("Input arrays must not contain NaN values")
+
+    # Interpolate missing values
+    x_interp = np.interp(
+        timestamps,
+        timestamps[~np.isnan(x_positions)],
+        x_positions[~np.isnan(x_positions)],
+    )
+    y_interp = np.interp(
+        timestamps,
+        timestamps[~np.isnan(y_positions)],
+        y_positions[~np.isnan(y_positions)],
+    )
+
+    # Apply Butterworth filter
+    nyquist = params["sampling_rate"] / 2
+    normal_cutoff = params["cutoff_freq"] / nyquist
+    b, a = butter(params["filter_order"], normal_cutoff, btype="low")
+    x_filtered = filtfilt(b, a, x_interp)
+    y_filtered = filtfilt(b, a, y_interp)
+
+    return x_filtered, y_filtered, timestamps
+
+
+def preprocess(
+    x_positions: np.ndarray,
+    y_positions: np.ndarray,
+    timestamps: np.ndarray,
+    sampling_rate: float = 1000.0,
+    filter_order: int = 4,
+    cutoff_freq: float = 50.0,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Preprocess eye movement data with default parameters.
+
+    Args:
+        x_positions: Array of X positions of eye movements.
+        y_positions: Array of Y positions of eye movements.
+        timestamps: Array of timestamps corresponding to the eye movement data.
+        sampling_rate: Sampling rate of the eye movement data in Hz.
+        filter_order: Order of the Butterworth filter.
+        cutoff_freq: Cutoff frequency for the Butterworth filter in Hz.
+
+    Returns:
+        Tuple containing:
+            - Filtered and interpolated X positions
+            - Filtered and interpolated Y positions
+            - Interpolated timestamps
+    """
+    params = {
+        "sampling_rate": sampling_rate,
+        "filter_order": filter_order,
+        "cutoff_freq": cutoff_freq,
+    }
+    return preprocess_data(x_positions, y_positions, timestamps, params)

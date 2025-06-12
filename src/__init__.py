@@ -1,49 +1,25 @@
-"""Microsaccade Selectivity as Discriminative Feature for Object Decoding.
+"""Eye movement detection package.
 
-This package provides tools for analyzing microsaccade selectivity in eye movement data
-and using it as a discriminative feature for object decoding.
+This package provides tools for detecting and analyzing various types of eye movements,
+including saccades, microsaccades, blinks, and glitches.
 """
 
-from .blink_detector import BlinkDetectorByEyePositions
-from .detect_microsaccades import detect_microsaccades
-from .detect_saccades import detect_saccades
-from .glitch_detector import detect_glitches
-from .logger import logger, setup_logger
-from .postprocess import noise_threshold_extract, validate_saccades_min_duration
-from .preprocess import (
-    correct_baseline_drift,
-    filter_data,
-    interpolate_data,
-    low_pass_filter_eye_positions,
-    remove_blinks,
-)
-from .utils import (
-    compute_amplitude,
-    compute_partial_velocity,
-    compute_velocity,
-    compute_velocity_consecutive,
-)
-
-__version__ = "0.1.0"
-__author__ = "Salar Nouri"
-__email__ = "salar.nouri@epfl.ch"
+from .blink_detector import detect_blinks, validate_blinks
+from .detect_microsaccades import detect_microsaccades, validate_microsaccades
+from .detect_saccades import detect_saccades, validate_saccades
+from .glitch_detector import detect_glitches, validate_glitches
+from .postprocess import postprocess
+from .preprocess import preprocess
 
 __all__ = [
-    "BlinkDetectorByEyePositions",
+    "detect_blinks",
+    "validate_blinks",
     "detect_microsaccades",
+    "validate_microsaccades",
     "detect_saccades",
+    "validate_saccades",
     "detect_glitches",
-    "noise_threshold_extract",
-    "validate_saccades_min_duration",
-    "filter_data",
-    "remove_blinks",
-    "correct_baseline_drift",
-    "interpolate_data",
-    "low_pass_filter_eye_positions",
-    "compute_velocity",
-    "compute_amplitude",
-    "compute_partial_velocity",
-    "compute_velocity_consecutive",
-    "logger",
-    "setup_logger",
+    "validate_glitches",
+    "postprocess",
+    "preprocess",
 ]

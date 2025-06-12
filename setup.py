@@ -1,28 +1,36 @@
+"""Setup script for the eye movement detection package."""
+
 from setuptools import find_packages, setup
+
+with open("README.md", "r", encoding="utf-8") as fh:
+    long_description = fh.read()
+
+with open("requirements.txt", "r", encoding="utf-8") as fh:
+    requirements = fh.read().splitlines()
 
 setup(
     name="ms-selectivity-feature",
     version="0.1.0",
-    description="Microsaccade Selectivity as Discriminative Feature for Object Decoding",
     author="Salar Nouri",
-    author_email="salr.nouri@gmail.com",
-    url="https://github.com/sa-nouri/ms-selectivity-feature",
-    package_dir={"": "src"},
-    packages=find_packages(where="src"),
-    install_requires=[
-        "numpy>=2.1.1",
-        "scikit-learn>=1.5.2",
-        "scipy>=1.14.1",
-        "matplotlib>=3.9.2",
-        "pandas>=2.2.3",
-        "seaborn>=0.13.2",
-    ],
-    python_requires=">=3.11",
+    author_email="salar.nouri@epfl.ch",
+    description="Eye movement detection package",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    url="https://github.com/sali/ms-selectivity-feature",
+    packages=find_packages(),
     classifiers=[
-        "Development Status :: 4 - Beta",
+        "Development Status :: 3 - Alpha",
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
-        "Topic :: Scientific/Engineering :: Bio-Informatics",
+        "Programming Language :: Python :: 3.12",
+        "Topic :: Scientific/Engineering",
     ],
+    python_requires=">=3.8",
+    install_requires=requirements,
 )
