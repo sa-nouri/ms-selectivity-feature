@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from ms_selectivity_feature.utils import (
+from src.utils import (
     compute_velocity,
     compute_amplitude,
     compute_partial_velocity,

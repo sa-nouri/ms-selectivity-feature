@@ -64,4 +64,8 @@ warn_unreachable = true
 
 [[tool.mypy.overrides]]
 module = ["numpy.*", "pandas.*", "scipy.*", "sklearn.*"]
-ignore_missing_imports = true 
+ignore_missing_imports = true
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+packages = ["find-namespace:"] 

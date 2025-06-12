@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from ms_selectivity_feature.postprocess import (
+from src.postprocess import (
     noise_threshold_extract,
     validate_saccades_min_duration,
 )

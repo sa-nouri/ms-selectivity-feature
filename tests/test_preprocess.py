@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from ms_selectivity_feature.preprocess import (
+from src.preprocess import (
     filter_data,
     remove_blinks,
     correct_baseline_drift,

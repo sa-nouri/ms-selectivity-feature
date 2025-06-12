@@ -40,4 +40,4 @@ jobs:
     
     - name: Run tests
       run: |
-        pytest --cov=ms_selectivity_feature tests/ 
+        pytest --cov=src tests/ 

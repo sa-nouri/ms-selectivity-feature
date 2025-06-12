@@ -7,7 +7,8 @@ setup(
     author="Salar Nouri",
     author_email="salar.nouri@epfl.ch",
     url="https://github.com/sa-nouri/ms-selectivity-feature",
-    packages=find_packages(),
+    package_dir={"": "src"},
+    packages=find_packages(where="src"),
     install_requires=[
         "numpy>=2.1.1",
         "scikit-learn>=1.5.2",
