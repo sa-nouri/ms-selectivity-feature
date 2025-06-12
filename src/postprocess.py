@@ -3,30 +3,51 @@ from sklearn import mixture
 from typing import List, Tuple, Union, Optional
 
 
-def noise_threshold_extract(data_input: np.ndarray) -> float:
+def noise_threshold_extract(
+    data_input: np.ndarray,
+    preliminary_threshold: float = 10.0,
+    n_components: int = 2,
+    std_multiplier: float = 3.0
+) -> float:
     """Extract noise threshold using Gaussian Mixture Model.
     
     This function uses a Gaussian Mixture Model to separate signal from noise
-    in eye movement data. It fits a 2-component GMM to the data below a
-    preliminary threshold and returns a refined threshold value.
+    in eye movement data. It fits a GMM to the data below a preliminary threshold
+    and returns a refined threshold value.
     
     Args:
         data_input: Array of eye movement data (e.g., velocities).
+        preliminary_threshold: Initial threshold to filter data for GMM fitting.
+            Defaults to 10.0.
+        n_components: Number of components in the GMM. Defaults to 2.
+        std_multiplier: Multiplier for standard deviation to set final threshold.
+            Defaults to 3.0.
     
     Returns:
         A float value representing the noise threshold, calculated as the mean
-        of the lower component plus 3 times its standard deviation.
+        of the lower component plus std_multiplier times its standard deviation.
     """
-    # Prefer to lower the values to about 20 deg/sec if the idea is to detect microsaccades
-    threshold = 10
-    idx = (data_input < threshold)
-    gmm = mixture.GaussianMixture(n_components=2, 
-                                  covariance_type='full',
-                                  max_iter=100).fit(data_input[idx].reshape(-1, 1))    
+    # Filter data below preliminary threshold
+    idx = (data_input < preliminary_threshold)
+    if not np.any(idx):
+        return preliminary_threshold
+    
+    # Fit GMM to filtered data
+    gmm = mixture.GaussianMixture(
+        n_components=n_components,
+        covariance_type='full',
+        max_iter=100
+    ).fit(data_input[idx].reshape(-1, 1))
+    
+    # Get means and standard deviations
     means = gmm.means_
     covariances = np.sqrt(gmm.covariances_)
-    idd = np.argsort(means.reshape(2))
-    value = float((means[idd[0]]+3*covariances[idd[0]])[0])
+    
+    # Sort components by mean
+    idd = np.argsort(means.reshape(n_components))
+    
+    # Calculate threshold
+    value = float((means[idd[0]] + std_multiplier * covariances[idd[0]])[0])
     return value
 
 

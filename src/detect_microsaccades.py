@@ -71,22 +71,17 @@ def detect_microsaccades(
                 f"amplitude_th={params['amplitude_th']}")
     
     velocities, sigma_vx, sigma_vy = compute_velocity(x_positions, y_positions, timestamps)
-    # velocity_threshold = params['threshold_multiplier'] * np.sqrt(sigma_vx**2 + sigma_vy**2)
-    
-    velocity_threshold_x = sigma_vx * params['threshold_multiplier']
-    velocity_threshold_y = sigma_vy * params['threshold_multiplier']
+    velocity_threshold = params['threshold_multiplier'] * np.sqrt(sigma_vx**2 + sigma_vy**2)
     
     microsaccades = []
     current_saccade = None
     microsaccade_start = None
     
     for i in range(1, len(velocities) - 1):
-        
         velocity_x, velocity_y = compute_partial_velocity(x_positions, y_positions, timestamps, i-1, i)
-        velocity_xy = (velocity_x**2 / velocity_threshold_x**2) + (velocity_y**2 / velocity_threshold_y**2)
+        velocity_magnitude = np.sqrt(velocity_x**2 + velocity_y**2)
         
-        # if velocities[i] >= velocity_threshold:
-        if velocity_xy > 1:
+        if velocity_magnitude >= velocity_threshold:
             if current_saccade is None:
                 microsaccade_start = i
                 current_saccade = {
@@ -97,19 +92,30 @@ def detect_microsaccades(
                     'duration': 0
                 }
             current_saccade['end'] = i
-        
-        if current_saccade is not None:
+        elif current_saccade is not None:
             current_saccade['duration'] = timestamps[current_saccade['end']] - timestamps[microsaccade_start]
-        
+            
             if current_saccade['duration'] >= params['min_duration']:
                 current_saccade['amplitude'] = compute_amplitude(x_positions, y_positions, microsaccade_start, current_saccade['end'])
                 current_saccade['velocity'] = current_saccade['amplitude'] / current_saccade['duration']
-                # current_saccade['velocity'] = velocities[i]
+                
+                # Check amplitude threshold after computing amplitude
                 if current_saccade['amplitude'] <= params["amplitude_th"]:
                     microsaccades.append(current_saccade)
-
+            
             current_saccade = None
+            microsaccade_start = None
+    
+    # Handle the last microsaccade if it exists
+    if current_saccade is not None:
+        current_saccade['duration'] = timestamps[current_saccade['end']] - timestamps[microsaccade_start]
+        if current_saccade['duration'] >= params['min_duration']:
+            current_saccade['amplitude'] = compute_amplitude(x_positions, y_positions, microsaccade_start, current_saccade['end'])
+            current_saccade['velocity'] = current_saccade['amplitude'] / current_saccade['duration']
+            
+            # Check amplitude threshold after computing amplitude
+            if current_saccade['amplitude'] <= params["amplitude_th"]:
+                microsaccades.append(current_saccade)
 
     logger.info(f"Found {len(microsaccades)} microsaccades")
-    
     return microsaccades

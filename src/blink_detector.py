@@ -130,3 +130,51 @@ def BlinkDetectorByEyePositions(
             gaze_points['data'][onset:offset + 1]['INTERSACC_INTERVAL_INDEX'] = -1
 
     return gaze_points
+
+def detect_blinks(x_positions, y_positions, timestamps, min_duration=50, min_amplitude=2.0):
+    """Detect blinks in eye movement data for test compatibility.
+    Args:
+        x_positions: Array of X positions.
+        y_positions: Array of Y positions.
+        timestamps: Array of timestamps.
+        min_duration: Minimum duration for a blink (ms).
+        min_amplitude: Minimum amplitude for a blink.
+    Returns:
+        List of dicts with blink info (start_time, end_time, duration, amplitude).
+    """
+    # Check for NaN values
+    if np.isnan(x_positions).any() or np.isnan(y_positions).any():
+        raise ValueError("Input arrays must not contain NaN values")
+
+    if len(x_positions) == 0 or np.all(y_positions == y_positions[0]):
+        return []
+
+    # Detect periods where y_positions is far from baseline (amplitude threshold)
+    is_blink = np.abs(y_positions) > min_amplitude
+    blink_diff = np.diff(np.hstack([[0], is_blink.astype(int)]))
+    blink_onsets = np.where(blink_diff == 1)[0]
+    blink_offsets = np.where(blink_diff == -1)[0]
+
+    blinks = []
+    for onset, offset in zip(blink_onsets, blink_offsets):
+        duration = timestamps[offset-1] - timestamps[onset]
+        amplitude = np.abs(y_positions[offset-1] - y_positions[onset])
+        if duration >= min_duration and amplitude >= min_amplitude:
+            blinks.append({
+                'start_time': timestamps[onset],
+                'end_time': timestamps[offset-1],
+                'duration': duration,
+                'amplitude': amplitude
+            })
+    return blinks
+
+def validate_blinks(blinks, min_duration=0, min_amplitude=0, max_amplitude=None):
+    """Validate blinks based on duration and amplitude for test compatibility."""
+    validated = []
+    for b in blinks:
+        if b.get('duration', 0) < 0 or b.get('amplitude', 0) < 0:
+            raise ValueError('Invalid blink data: negative values')
+        if b.get('duration', 0) >= min_duration and b.get('amplitude', 0) >= min_amplitude:
+            if max_amplitude is None or b.get('amplitude', 0) < max_amplitude:
+                validated.append(b)
+    return validated

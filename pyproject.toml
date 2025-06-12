@@ -68,4 +68,4 @@ ignore_missing_imports = true
 
 [tool.setuptools]
 package-dir = {"" = "src"}
-packages = ["find-namespace:"] 
+packages = {find = {where = ["src"]}} 

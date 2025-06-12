@@ -36,33 +36,37 @@ def filter_data(
 def remove_blinks(
     x_positions: np.ndarray,
     y_positions: np.ndarray,
-    blink_threshold: int = 10
+    blink_threshold: float = 2.0
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Remove blinks from eye movement data.
     
     This function identifies and removes blink periods from eye movement data
-    based on temporal gaps in the data.
+    based on vertical eye movement amplitude.
     
     Args:
         x_positions: Array of X positions of eye movements.
         y_positions: Array of Y positions of eye movements.
-        blink_threshold: Maximum duration of a blink in milliseconds.
-            Defaults to 10 ms.
+        blink_threshold: Minimum amplitude threshold for blink detection.
+            Defaults to 2.0 degrees.
     
     Returns:
         Tuple containing:
             - cleaned_x: X positions with blinks removed
             - cleaned_y: Y positions with blinks removed
     """
-
-    time_diffs = np.diff(np.arange(len(x_positions)))
+    # Detect blinks using amplitude threshold
+    is_blink = np.abs(y_positions) > blink_threshold
+    blink_diff = np.diff(np.hstack([[0], is_blink.astype(int)]))
+    blink_onsets = np.where(blink_diff == 1)[0]
+    blink_offsets = np.where(blink_diff == -1)[0]
     
-    blink_indices = np.where(time_diffs > blink_threshold)[0]
+    # Create mask for non-blink periods
+    mask = np.ones(len(x_positions), dtype=bool)
+    for onset, offset in zip(blink_onsets, blink_offsets):
+        mask[onset:offset] = False
     
-    cleaned_x = np.delete(x_positions, blink_indices)
-    cleaned_y = np.delete(y_positions, blink_indices)
-    
-    return cleaned_x, cleaned_y
+    # Return cleaned data
+    return x_positions[mask], y_positions[mask]
 
 def correct_baseline_drift(
     x_positions: np.ndarray,
@@ -92,7 +96,7 @@ def interpolate_data(
     x_positions: np.ndarray,
     y_positions: np.ndarray,
     timestamps: np.ndarray,
-    sampling_freq: Optional[float] = None
+    sampling_freq: float
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Interpolate eye movement data to a uniform sampling rate.
     
@@ -103,8 +107,7 @@ def interpolate_data(
         x_positions: Array of X positions of eye movements.
         y_positions: Array of Y positions of eye movements.
         timestamps: Array of timestamps corresponding to the eye movement data.
-        sampling_freq: The desired sampling frequency in Hz. If None, no interpolation
-            is performed. Defaults to None.
+        sampling_freq: The desired sampling frequency in Hz.
     
     Returns:
         Tuple containing:
@@ -112,10 +115,6 @@ def interpolate_data(
             - y_inter: Interpolated Y positions
             - t_inter: Interpolated timestamps
     """
-    
-    if sampling_freq is None:
-        return x_positions, y_positions, timestamps
-
     total_time = timestamps[-1] - timestamps[0]
     frame_duration = 1000 / sampling_freq  # Convert Hz to milliseconds
     num_samples = int(np.round(total_time / frame_duration)) + 1

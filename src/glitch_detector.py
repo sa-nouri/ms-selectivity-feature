@@ -122,7 +122,7 @@ def validate_glitches(
         if min_magnitude is not None and glitch['magnitude'] < min_magnitude:
             continue
         
-        if max_magnitude is not None and glitch['magnitude'] > max_magnitude:
+        if max_magnitude is not None and glitch['magnitude'] >= max_magnitude:
             continue
         
         validated.append(glitch)
