@@ -22,6 +22,7 @@ from .utils import (
     compute_partial_velocity,
     compute_velocity_consecutive,
 )
+from .logger import logger, setup_logger
 
 __version__ = "0.1.0"
 __author__ = "Salar Nouri"
@@ -43,4 +44,6 @@ __all__ = [
     "compute_amplitude",
     "compute_partial_velocity",
     "compute_velocity_consecutive",
+    "logger",
+    "setup_logger",
 ] 

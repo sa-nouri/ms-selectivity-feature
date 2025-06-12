@@ -3,6 +3,7 @@ from typing import Dict, List, TypedDict, Optional
 
 from .utils import (compute_amplitude, compute_partial_velocity,
                    compute_velocity)
+from .logger import logger
 
 
 class MicrosaccadeParams(TypedDict):
@@ -64,6 +65,11 @@ def detect_microsaccades(
             - velocity: Velocity of the microsaccade in degrees per second
             - duration: Duration of the microsaccade in seconds
     """
+    logger.info("Starting microsaccade detection")
+    logger.debug(f"Parameters: min_duration={params['min_duration']}, "
+                f"threshold_multiplier={params['threshold_multiplier']}, "
+                f"amplitude_th={params['amplitude_th']}")
+    
     velocities, sigma_vx, sigma_vy = compute_velocity(x_positions, y_positions, timestamps)
     # velocity_threshold = params['threshold_multiplier'] * np.sqrt(sigma_vx**2 + sigma_vy**2)
     
@@ -104,4 +110,6 @@ def detect_microsaccades(
 
             current_saccade = None
 
+    logger.info(f"Found {len(microsaccades)} microsaccades")
+    
     return microsaccades
