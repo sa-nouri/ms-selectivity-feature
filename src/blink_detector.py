@@ -7,7 +7,7 @@ from .utils import compute_velocity
 
 class BlinkDetectorParams(TypedDict):
     """Parameters for blink detection.
-    
+
     Attributes:
         VERBOSE: Whether to print debug information.
         MAXIMAL_DISTANCE_TO_SACCADE_MILLISEC: Maximum time window to look for
@@ -15,6 +15,7 @@ class BlinkDetectorParams(TypedDict):
         MINIMAL_BLINK_DURATION_MILLISEC: Minimum duration for a valid blink
             in milliseconds.
     """
+
     VERBOSE: bool
     MAXIMAL_DISTANCE_TO_SACCADE_MILLISEC: float
     MINIMAL_BLINK_DURATION_MILLISEC: float
@@ -22,7 +23,7 @@ class BlinkDetectorParams(TypedDict):
 
 class GazePoint(TypedDict):
     """Structure for a single gaze point.
-    
+
     Attributes:
         time: Timestamp of the gaze point.
         status: Confidence status of the gaze point.
@@ -30,6 +31,7 @@ class GazePoint(TypedDict):
         SACC_INTERVAL_INDEX: Index of the saccade interval.
         INTERSACC_INTERVAL_INDEX: Index of the intersaccade interval.
     """
+
     time: float
     status: int
     EYE_MOVEMENT_TYPE: str
@@ -39,10 +41,11 @@ class GazePoint(TypedDict):
 
 class GazePoints(TypedDict):
     """Structure for gaze points data.
-    
+
     Attributes:
         data: Array of GazePoint objects.
     """
+
     data: np.ndarray
 
 
@@ -51,14 +54,14 @@ def BlinkDetectorByEyePositions(
     x_positions: np.ndarray,
     y_positions: np.ndarray,
     gaze_points: GazePoints,
-    inplace: bool = False
+    inplace: bool = False,
 ) -> GazePoints:
     """Detect blinks in eye movement data based on eye position and gaze points.
-    
+
     This function detects blinks in eye movement data by analyzing eye positions
     and gaze points with confidence intervals. It extends the 0-confidence
     intervals by adding nearby saccades if they are within a defined distance.
-    
+
     Args:
         param: Dictionary containing detection parameters:
             - VERBOSE: Whether to print debug information
@@ -76,7 +79,7 @@ def BlinkDetectorByEyePositions(
                 - INTERSACC_INTERVAL_INDEX: Intersaccade interval index
         inplace: Whether to modify gaze_points in place or create a copy.
             Defaults to False.
-    
+
     Returns:
         Updated gaze_points dictionary with 'BLINK' labels added to the
         appropriate intervals.
@@ -84,37 +87,51 @@ def BlinkDetectorByEyePositions(
     if not inplace:
         gaze_points = copy.deepcopy(gaze_points)
 
-    if 'status' not in gaze_points['data'].dtype.names:
+    if "status" not in gaze_points["data"].dtype.names:
         return gaze_points
 
-    is_blink = (gaze_points['data']['status'] == 0).astype(int)
-    
+    is_blink = (gaze_points["data"]["status"] == 0).astype(int)
+
     blink_diff = np.diff(np.hstack([[0], is_blink]))
     blink_onsets = np.nonzero(blink_diff == 1)[0]
     blink_offsets = np.nonzero(np.diff(np.hstack([is_blink, [0]])) == -1)[0]
 
-    times = gaze_points['data']['time']
-    
+    times = gaze_points["data"]["time"]
+
     assert len(blink_onsets) == len(blink_offsets)
-    
+
     for onset, offset in zip(blink_onsets, blink_offsets):
         if param["VERBOSE"]:
             print(f"Found blink from {times[onset]} to {times[offset]}")
 
         onset_candidate = onset
-        while onset_candidate >= 0 and times[onset] - times[onset_candidate] < param["MAXIMAL_DISTANCE_TO_SACCADE_MILLISEC"]:
-            if gaze_points['data'][onset_candidate]['EYE_MOVEMENT_TYPE'] == 'SACCADE':
-                sacc_index = gaze_points['data'][onset_candidate]['SACC_INTERVAL_INDEX']
-                first_saccade_index = np.nonzero(gaze_points['data']['SACC_INTERVAL_INDEX'] == sacc_index)[0][0]
+        while (
+            onset_candidate >= 0
+            and times[onset] - times[onset_candidate]
+            < param["MAXIMAL_DISTANCE_TO_SACCADE_MILLISEC"]
+        ):
+            if gaze_points["data"][onset_candidate]["EYE_MOVEMENT_TYPE"] == "SACCADE":
+                sacc_index = gaze_points["data"][onset_candidate]["SACC_INTERVAL_INDEX"]
+                first_saccade_index = np.nonzero(
+                    gaze_points["data"]["SACC_INTERVAL_INDEX"] == sacc_index
+                )[0][0]
                 onset = first_saccade_index
                 break
             onset_candidate -= 1
 
         offset_candidate = offset
-        while offset_candidate < len(times) and times[offset_candidate] - times[offset] < param["MAXIMAL_DISTANCE_TO_SACCADE_MILLISEC"]:
-            if gaze_points['data'][offset_candidate]['EYE_MOVEMENT_TYPE'] == 'SACCADE':
-                sacc_index = gaze_points['data'][offset_candidate]['SACC_INTERVAL_INDEX']
-                last_saccade_index = np.nonzero(gaze_points['data']['SACC_INTERVAL_INDEX'] == sacc_index)[0][-1]
+        while (
+            offset_candidate < len(times)
+            and times[offset_candidate] - times[offset]
+            < param["MAXIMAL_DISTANCE_TO_SACCADE_MILLISEC"]
+        ):
+            if gaze_points["data"][offset_candidate]["EYE_MOVEMENT_TYPE"] == "SACCADE":
+                sacc_index = gaze_points["data"][offset_candidate][
+                    "SACC_INTERVAL_INDEX"
+                ]
+                last_saccade_index = np.nonzero(
+                    gaze_points["data"]["SACC_INTERVAL_INDEX"] == sacc_index
+                )[0][-1]
                 offset = last_saccade_index
                 break
             offset_candidate += 1
@@ -122,16 +139,19 @@ def BlinkDetectorByEyePositions(
         if param["VERBOSE"]:
             print(f"Extended it to {times[onset]} {times[offset]}")
 
-        if times[offset] - times[onset] < param['MINIMAL_BLINK_DURATION_MILLISEC']:
-            gaze_points['data'][onset:offset + 1]['EYE_MOVEMENT_TYPE'] = 'NOISE'
+        if times[offset] - times[onset] < param["MINIMAL_BLINK_DURATION_MILLISEC"]:
+            gaze_points["data"][onset : offset + 1]["EYE_MOVEMENT_TYPE"] = "NOISE"
         else:
-            gaze_points['data'][onset:offset + 1]['EYE_MOVEMENT_TYPE'] = 'BLINK'
-            gaze_points['data'][onset:offset + 1]['SACC_INTERVAL_INDEX'] = -1
-            gaze_points['data'][onset:offset + 1]['INTERSACC_INTERVAL_INDEX'] = -1
+            gaze_points["data"][onset : offset + 1]["EYE_MOVEMENT_TYPE"] = "BLINK"
+            gaze_points["data"][onset : offset + 1]["SACC_INTERVAL_INDEX"] = -1
+            gaze_points["data"][onset : offset + 1]["INTERSACC_INTERVAL_INDEX"] = -1
 
     return gaze_points
 
-def detect_blinks(x_positions, y_positions, timestamps, min_duration=50, min_amplitude=2.0):
+
+def detect_blinks(
+    x_positions, y_positions, timestamps, min_duration=50, min_amplitude=2.0
+):
     """Detect blinks in eye movement data for test compatibility.
     Args:
         x_positions: Array of X positions.
@@ -157,24 +177,30 @@ def detect_blinks(x_positions, y_positions, timestamps, min_duration=50, min_amp
 
     blinks = []
     for onset, offset in zip(blink_onsets, blink_offsets):
-        duration = timestamps[offset-1] - timestamps[onset]
-        amplitude = np.abs(y_positions[offset-1] - y_positions[onset])
+        duration = timestamps[offset - 1] - timestamps[onset]
+        amplitude = np.abs(y_positions[offset - 1] - y_positions[onset])
         if duration >= min_duration and amplitude >= min_amplitude:
-            blinks.append({
-                'start_time': timestamps[onset],
-                'end_time': timestamps[offset-1],
-                'duration': duration,
-                'amplitude': amplitude
-            })
+            blinks.append(
+                {
+                    "start_time": timestamps[onset],
+                    "end_time": timestamps[offset - 1],
+                    "duration": duration,
+                    "amplitude": amplitude,
+                }
+            )
     return blinks
+
 
 def validate_blinks(blinks, min_duration=0, min_amplitude=0, max_amplitude=None):
     """Validate blinks based on duration and amplitude for test compatibility."""
     validated = []
     for b in blinks:
-        if b.get('duration', 0) < 0 or b.get('amplitude', 0) < 0:
-            raise ValueError('Invalid blink data: negative values')
-        if b.get('duration', 0) >= min_duration and b.get('amplitude', 0) >= min_amplitude:
-            if max_amplitude is None or b.get('amplitude', 0) < max_amplitude:
+        if b.get("duration", 0) < 0 or b.get("amplitude", 0) < 0:
+            raise ValueError("Invalid blink data: negative values")
+        if (
+            b.get("duration", 0) >= min_duration
+            and b.get("amplitude", 0) >= min_amplitude
+        ):
+            if max_amplitude is None or b.get("amplitude", 0) < max_amplitude:
                 validated.append(b)
     return validated

@@ -6,7 +6,7 @@ def compute_velocity(
     x_positions: np.ndarray,
     y_positions: np.ndarray,
     timestamps: np.ndarray,
-    apply_smoothing: bool = False
+    apply_smoothing: bool = False,
 ) -> Tuple[np.ndarray, float, float]:
     """Compute the velocity of eye movements based on the two-point method.
 
@@ -28,9 +28,13 @@ def compute_velocity(
             - sigma_vy: Median-based standard deviation for the vertical (y) gaze positions.
     """
     valid_indices = ~np.isnan(x_positions) & ~np.isnan(y_positions)
-    x_positions = np.interp(timestamps, timestamps[valid_indices], x_positions[valid_indices])
-    y_positions = np.interp(timestamps, timestamps[valid_indices], y_positions[valid_indices])
-    
+    x_positions = np.interp(
+        timestamps, timestamps[valid_indices], x_positions[valid_indices]
+    )
+    y_positions = np.interp(
+        timestamps, timestamps[valid_indices], y_positions[valid_indices]
+    )
+
     velocities = []
     for i in range(1, len(timestamps)):
         dx = x_positions[i] - x_positions[i - 1]
@@ -41,51 +45,50 @@ def compute_velocity(
 
     velocities = np.array(velocities)
     # velocities *= 1e3  # degree per second
-    
+
     if apply_smoothing:
-        velocities = np.convolve(velocities, np.ones(5)/5, mode='same')
+        velocities = np.convolve(velocities, np.ones(5) / 5, mode="same")
         velocities[:2] = velocities[2]  # Handle edge cases for smoothing
         velocities[-2:] = velocities[-3]
-    
+
     vx = np.diff(x_positions) / np.diff(timestamps)
     vy = np.diff(y_positions) / np.diff(timestamps)
-    
-    sigma_vx = np.sqrt(np.median((vx - np.median(vx))**2))
-    sigma_vy = np.sqrt(np.median((vy - np.median(vy))**2))
+
+    sigma_vx = np.sqrt(np.median((vx - np.median(vx)) ** 2))
+    sigma_vy = np.sqrt(np.median((vy - np.median(vy)) ** 2))
 
     return velocities, sigma_vx, sigma_vy
 
+
 def compute_amplitude(
-    x_positions: np.ndarray,
-    y_positions: np.ndarray,
-    start_index: int,
-    end_index: int
+    x_positions: np.ndarray, y_positions: np.ndarray, start_index: int, end_index: int
 ) -> float:
     """Compute the amplitude of an eye movement from start to end positions.
-    
+
     Args:
         x_positions: Array of X positions of eye movements.
         y_positions: Array of Y positions of eye movements.
         start_index: Starting index of the eye movement.
         end_index: Ending index of the movement.
-    
+
     Returns:
         The total amplitude of the eye movement (displacement) in degrees.
     """
-    
+
     dx = x_positions[end_index] - x_positions[start_index]
     dy = y_positions[end_index] - y_positions[start_index]
-    
+
     amplitude = np.sqrt(dx**2 + dy**2)
-    
+
     return amplitude
+
 
 def compute_partial_velocity(
     x_positions: np.ndarray,
     y_positions: np.ndarray,
     timestamps: np.ndarray,
     start_idx: int,
-    end_idx: int
+    end_idx: int,
 ) -> Tuple[float, float]:
     """Compute the velocity between two specific points in the eye movement data.
 
@@ -104,16 +107,15 @@ def compute_partial_velocity(
     vx = x_positions[end_idx] - x_positions[start_idx]
     vy = y_positions[end_idx] - y_positions[start_idx]
     dt = timestamps[end_idx] - timestamps[start_idx]
-    
+
     velocity_x = vx / dt
     velocity_y = vy / dt
-    
+
     return velocity_x, velocity_y
 
+
 def compute_velocity_consecutive(
-    x_position: np.ndarray,
-    y_position: np.ndarray,
-    timestamp: np.ndarray
+    x_position: np.ndarray, y_position: np.ndarray, timestamp: np.ndarray
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Compute consecutive velocities in horizontal and vertical directions.
 
@@ -131,8 +133,8 @@ def compute_velocity_consecutive(
             - y_velocity: Array of vertical velocities.
             - pythagorean_velocity: Array of combined velocities based on the Pythagorean theorem.
     """
-    x_velocity = np.append(0, np.abs(np.diff(x_position)/np.diff(timestamp)))
-    y_velocity = np.append(0, np.abs(np.diff(y_position)/np.diff(timestamp)))
-    
+    x_velocity = np.append(0, np.abs(np.diff(x_position) / np.diff(timestamp)))
+    y_velocity = np.append(0, np.abs(np.diff(y_position) / np.diff(timestamp)))
+
     Pythagorean_velocity = np.sqrt(np.square(x_velocity) + np.square(y_velocity))
     return x_velocity, y_velocity, Pythagorean_velocity

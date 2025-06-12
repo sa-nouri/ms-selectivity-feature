@@ -46,4 +46,4 @@ __all__ = [
     "compute_velocity_consecutive",
     "logger",
     "setup_logger",
-] 
+]
