@@ -1,23 +1,34 @@
 import numpy as np
+from typing import Tuple, Literal
 
 from scripts.utils import compute_velocity
 
 
-def detect_glitches(x_positions, y_positions, timestamps, max_speed=1000):
-    """
-    Detect glitches in eye-tracking data based on velocity exceeding the maxSpeed threshold.
-    Glitches are defined as velocities that exceed the max_speed and are labeled as noise.
-
+def detect_glitches(
+    x_positions: np.ndarray,
+    y_positions: np.ndarray,
+    timestamps: np.ndarray,
+    max_speed: float = 1000
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Detect glitches in eye-tracking data based on velocity thresholds.
+    
+    This function identifies glitches in eye-tracking data by detecting velocities
+    that exceed a maximum speed threshold. Glitches are labeled as 'NOISE' while
+    valid data points are labeled as 'VALID'.
+    
     Args:
-    - x_positions (array): X positions of eye movements.
-    - y_positions (array): Y positions of eye movements.
-    - timestamps (array): Timestamps corresponding to each eye movement position.
-    - max_speed (float): Maximum allowed speed (in degrees/second) before classifying as a glitch (default is 1000).
-
+        x_positions: Array of X positions of eye movements.
+        y_positions: Array of Y positions of eye movements.
+        timestamps: Array of timestamps corresponding to each eye movement position.
+        max_speed: Maximum allowed speed (in degrees/second) before classifying
+            as a glitch. Defaults to 1000 degrees/second.
+    
     Returns:
-    - glitch_indices (array): Indices of the detected glitches.
-    - velocities (array): The computed velocities for each time step.
-    - labels (array): Array where glitches are labeled as 'NOISE' and others as 'VALID'.
+        Tuple containing:
+            - glitch_indices: Array of indices where glitches were detected
+            - velocities: Array of computed velocities for each time step
+            - labels: Array of labels where glitches are marked as 'NOISE' and
+                others as 'VALID'
     """
 
     velocities = compute_velocity(x_positions, y_positions, timestamps)
