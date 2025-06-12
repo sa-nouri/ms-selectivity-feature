@@ -10,4 +10,6 @@ black
 isort
 flake8
 mypy
+types-setuptools
+types-pytest
 
