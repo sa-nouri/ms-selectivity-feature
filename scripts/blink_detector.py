@@ -1,20 +1,83 @@
 import numpy as np
 import copy
+from typing import Dict, Any, Optional, TypedDict
 
-def BlinkDetectorByEyePositions(param, x_positions, y_positions, gaze_points, inplace=False):
+
+class BlinkDetectorParams(TypedDict):
+    """Parameters for blink detection.
+    
+    Attributes:
+        VERBOSE: Whether to print debug information.
+        MAXIMAL_DISTANCE_TO_SACCADE_MILLISEC: Maximum time window to look for
+            nearby saccades in milliseconds.
+        MINIMAL_BLINK_DURATION_MILLISEC: Minimum duration for a valid blink
+            in milliseconds.
     """
-    Detect blinks in eye movement data based on eye position data (x, y) and gaze points with confidence intervals.
-    We extend the 0-confidence intervals by adding the nearest saccade if within a defined distance.
+    VERBOSE: bool
+    MAXIMAL_DISTANCE_TO_SACCADE_MILLISEC: float
+    MINIMAL_BLINK_DURATION_MILLISEC: float
 
+
+class GazePoint(TypedDict):
+    """Structure for a single gaze point.
+    
+    Attributes:
+        time: Timestamp of the gaze point.
+        status: Confidence status of the gaze point.
+        EYE_MOVEMENT_TYPE: Type of eye movement at this point.
+        SACC_INTERVAL_INDEX: Index of the saccade interval.
+        INTERSACC_INTERVAL_INDEX: Index of the intersaccade interval.
+    """
+    time: float
+    status: int
+    EYE_MOVEMENT_TYPE: str
+    SACC_INTERVAL_INDEX: int
+    INTERSACC_INTERVAL_INDEX: int
+
+
+class GazePoints(TypedDict):
+    """Structure for gaze points data.
+    
+    Attributes:
+        data: Array of GazePoint objects.
+    """
+    data: np.ndarray
+
+
+def BlinkDetectorByEyePositions(
+    param: BlinkDetectorParams,
+    x_positions: np.ndarray,
+    y_positions: np.ndarray,
+    gaze_points: GazePoints,
+    inplace: bool = False
+) -> GazePoints:
+    """Detect blinks in eye movement data based on eye position and gaze points.
+    
+    This function detects blinks in eye movement data by analyzing eye positions
+    and gaze points with confidence intervals. It extends the 0-confidence
+    intervals by adding nearby saccades if they are within a defined distance.
+    
     Args:
-    - param (dict): Parameters such as maximal distance to saccade, minimal blink duration, etc.
-    - x_positions (array): X positions of eye movements.
-    - y_positions (array): Y positions of eye movements.
-    - gaze_points (dict): Gaze recording data (includes 'data', 'time', 'status', etc.).
-    - inplace (bool): Whether to modify gaze_points in place or create a copy.
-
+        param: Dictionary containing detection parameters:
+            - VERBOSE: Whether to print debug information
+            - MAXIMAL_DISTANCE_TO_SACCADE_MILLISEC: Maximum time window to look
+                for nearby saccades
+            - MINIMAL_BLINK_DURATION_MILLISEC: Minimum duration for a valid blink
+        x_positions: Array of X positions of eye movements.
+        y_positions: Array of Y positions of eye movements.
+        gaze_points: Dictionary containing gaze recording data with fields:
+            - data: Array of gaze points with fields:
+                - time: Timestamps
+                - status: Confidence status
+                - EYE_MOVEMENT_TYPE: Type of eye movement
+                - SACC_INTERVAL_INDEX: Saccade interval index
+                - INTERSACC_INTERVAL_INDEX: Intersaccade interval index
+        inplace: Whether to modify gaze_points in place or create a copy.
+            Defaults to False.
+    
     Returns:
-    - gaze_points (dict): Updated gaze points with 'BLINK' labels added.
+        Updated gaze_points dictionary with 'BLINK' labels added to the
+        appropriate intervals.
     """
     if not inplace:
         gaze_points = copy.deepcopy(gaze_points)
