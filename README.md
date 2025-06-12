@@ -1,65 +1,156 @@
-# Microsaccade Selectivity as Discriminative Feature
+# Microsaccade Selectivity as Discriminative Feature for Object Decoding
 
-This repository contains code and resources for [Microsaccade Selectivity as Discriminative Feature for Object Decoding](https://www.biorxiv.org/content/10.1101/2024.04.13.589338v1).
-The project explores the effect of stimulus catagories on saccade/microsaccade, particularly microsaccade rate among the different stimulus categories.
+This repository contains the code for analyzing microsaccade selectivity as a discriminative feature for object decoding in eye tracking data.
 
-## Table of Contents
+## Features
 
-- [Microsaccade Selectivity as Discriminative Feature](#microsaccade-selectivity-as-discriminative-feature)
-  - [Table of Contents](#table-of-contents)
-  - [Abstract](#abstract)
-  - [Project Structure](#project-structure)
-  - [Installation and Setup Instructions](#installation-and-setup-instructions)
-  - [Data Availability](#data-availability)
-  - [Contributing](#contributing)
-  - [Citing This Work](#citing-this-work)
-  - [License](#license)
+- Microsaccade detection and analysis
+- Blink detection and removal
+- Glitch detection and correction
+- Data preprocessing and postprocessing
+- Comprehensive test suite
+- Logging support
 
-## Abstract
+## Installation
 
-Microsaccades, a form of fixational eye movements, maintain visual stability during stationary observations. Previous studies have provided valuable insights into the relationship between microsaccade characteristics and external stimuli. However, the dynamic nature of microsaccades provides an opportunity to explore the mechanisms of information processing, particularly object decoding. This study examines the modulation of microsaccadic rates by different stimulus categories. Our experimental approach involves an analysis of microsaccade characteristics in monkeys and human subjects engaged in a passive viewing task. The stimulus categories comprised four primary categories: human, animal, natural, and man-made. We identified distinct microsaccade patterns across different stimulus categories, successfully decoding the stimulus category based on the microsaccade rate post-stimulus distribution. Our experiments demonstrate that stimulus categories can be classified with an average accuracy and recall of up to 85%. Our study found that microsaccade rates are independent of pupil size changes. Neural data showed that category classification in the inferior temporal (IT) cortex peaks earlier than microsaccade rates, suggesting a feedback mechanism from the IT cortex that influences eye movements after stimulus discrimination. These results exhibit potential for advancing neurobiological models, developing more effective human-machine interfaces, optimizing visual stimuli in experimental designs, and expanding our understanding of the capability of microsaccades as a feature for object decoding.
+### Prerequisites
 
-**Keywords**: Microsaccade; Eye Movements; Eye Tracking; Object Recognition
+- Python 3.11 or higher
+- pip (Python package installer)
 
-## Project Structure
+### Installation Steps
 
-- [Data](./data/): Contains raw samples of human and monkey eye movement data.
-- [Scripts](./scripts/): Source code for data preprocessing, statistical analysis, and visualizations. Further information about the scripts is available on [Scripts-Readme](./scripts/README.md).
-<!-- - [Notebooks](./notebooks/): Jupyter notebooks for exploration, analysis, and visualizations. -->
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/ms-selectivity-feature.git
+cd ms-selectivity-feature
+```
 
-## Installation and Setup Instructions
+2. Create and activate a virtual environment (recommended):
+```bash
+python -m venv msenv
+source msenv/bin/activate  # On Windows: msenv\Scripts\activate
+```
 
-To use the tools and scripts provided in this repository, follow these general setup instructions:
+3. Install the package:
+```bash
+pip install -e .
+```
 
-1. **Clone the Repository**: `git clone git@github.com:sa-nouri/ms-selectivity-feature.git`
+For development, install with additional dependencies:
+```bash
+pip install -e ".[dev]"
+```
 
-2. **Environment Setup**:
-   - Python: Ensure Python 3.11.7 is installed. Install required libraries using `pip install -r requirements.txt`.
+## Usage
 
-## Data Availability
+### Basic Usage
 
-In [Data](./data/) directory, we have provided sample data from a complete session for both [human](./data/human_sample/) and [monkey](./data/monkey_sample/) subjects. While we recognize the importance of data availability for verification and further research, the entire dataset cannot be made publicly available due to privacy and research lab constraints. However, as mentioned in the Data Availability section of our paper, we are happy to share additional data upon reasonable request from recognized academic or research institutions.
+```python
+from src import detect_microsaccades, detect_blinks, detect_glitches
+import numpy as np
+
+# Load your eye tracking data
+timestamps = np.load('data/timestamps.npy')
+x_positions = np.load('data/x_positions.npy')
+y_positions = np.load('data/y_positions.npy')
+
+# Detect microsaccades
+microsaccades = detect_microsaccades(
+    x_positions,
+    y_positions,
+    timestamps,
+    velocity_threshold=6.0,
+    min_duration=3,
+    max_duration=20
+)
+
+# Detect blinks
+blinks = detect_blinks(
+    x_positions,
+    y_positions,
+    timestamps,
+    min_duration=50,
+    min_amplitude=2.0
+)
+
+# Detect glitches
+glitches = detect_glitches(
+    x_positions,
+    y_positions,
+    timestamps,
+    threshold=5.0
+)
+```
+
+### Advanced Usage
+
+For more advanced usage examples, please refer to the [examples](examples/) directory.
+
+## Development
+
+### Setting Up Development Environment
+
+1. Install development dependencies:
+```bash
+pip install -e ".[dev]"
+```
+
+2. Install pre-commit hooks:
+```bash
+pre-commit install
+```
+
+### Running Tests
+
+```bash
+pytest
+```
+
+For coverage report:
+```bash
+pytest --cov=src tests/
+```
+
+### Code Style
+
+This project uses:
+- Black for code formatting
+- isort for import sorting
+- flake8 for linting
+- mypy for type checking
+
+Run all checks:
+```bash
+black src tests
+isort src tests
+flake8 src tests
+mypy src
+```
 
 ## Contributing
 
-If you want to contribute to this project, please check our [contributing guidelines](./CONTRIBUTING.md).
-
-## Citing This Work
-
-If you use the "ms-selectivity-features" project or the research it is based on for your own work, please consider citing the following paper:
-
-```bibtex
-@article{nouri2025microsaccade,
-  title={Microsaccade selectivity as discriminative feature for object decoding},
-  author={Nouri, Salar and Tehrani, Amirali Soltani and Faridani, Niloufar and Toosi, Ramin and Noroozi, Jalaledin and Dehaqani, Mohammad-Reza A},
-  journal={Iscience},
-  volume={28},
-  number={1},
-  year={2025},
-  publisher={Elsevier}
-}
-```
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
 
 ## License
 
-This project is licensed under the [MIT License](./LICENSE.md).
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Citation
+
+If you use this code in your research, please cite:
+
+```bibtex
+@article{your-paper,
+  title={Microsaccade Selectivity as Discriminative Feature for Object Decoding},
+  author={Your Name},
+  journal={Journal Name},
+  year={2024}
+}
+```
+
+## Acknowledgments
+
+- List any acknowledgments here
+- Include references to related work
+- Credit any collaborators or institutions
