@@ -1,159 +1,99 @@
-# Microsaccade Selectivity as Discriminative Feature for Object Decoding
+# Microsaccade Selectivity as Discriminative Feature
 
-This repository contains the code for analyzing microsaccade selectivity as a discriminative feature for object decoding in eye tracking data.
+Microsaccade detection, feature extraction, and decoding code for Nouri et al. 2025, *Microsaccade selectivity as discriminative feature for object decoding*, iScience 28(1):111584.
 
-## Features
 
-- Microsaccade detection and analysis
-- Blink detection and removal
-- Glitch detection and correction
-- Data preprocessing and postprocessing
-- Comprehensive test suite
-- Logging support
+## Layout
 
-## Installation
-
-### Prerequisites
-
-- Python 3.11 or higher
-- pip (Python package installer)
-
-### Installation Steps
-
-1. Clone the repository:
-```bash
-git clone https://github.com/yourusername/ms-selectivity-feature.git
-cd ms-selectivity-feature
+```
+ms-selectivity-feature/
+├── src/                      see src/README.md
+│   └── msfeature/            see src/msfeature/README.md
+├── tests/                    see tests/README.md          (82 passing)
+├── notebooks/                see notebooks/README.md
+│   └── reproduce_monkey.ipynb
+├── data/                     see data/README.md
+│   ├── monkey_sample/
+│   └── human_sample/
+├── .github/workflows/ci.yml  GitHub Actions: install + pytest
+├── METHODS.md                algorithm spec, parameters, deviations
+├── CONTRIBUTING.md
+├── LICENSE
+├── pyproject.toml            single source of truth for build config
+└── requirements.txt
 ```
 
-2. Create and activate a virtual environment (recommended):
-```bash
-python -m venv msenv
-source msenv/bin/activate  # On Windows: msenv\Scripts\activate
-```
+Every top-level subdirectory carries its own `README.md` describing what
+lives there and how to use it.
 
-3. Install the package:
+## Install
+
 ```bash
+python3.11 -m venv .venv
+source .venv/bin/activate
 pip install -e .
+pip install -r requirements.txt   # tests + linting + pymovements crosscheck
 ```
 
-For development, install with additional dependencies:
-```bash
-pip install -e ".[dev]"
-```
-
-## Usage
-
-### Basic Usage
+## Quick start
 
 ```python
-from src import detect_microsaccades, detect_blinks, detect_glitches
-import numpy as np
+from msfeature.io import load_session
+from msfeature.config import MONKEY_CONFIG
+from msfeature.preprocess import preprocess_trial
+from msfeature.detect import detect_microsaccades
 
-# Load your eye tracking data
-timestamps = np.load('data/timestamps.npy')
-x_positions = np.load('data/x_positions.npy')
-y_positions = np.load('data/y_positions.npy')
-
-# Detect microsaccades
-microsaccades = detect_microsaccades(
-    x_positions,
-    y_positions,
-    timestamps,
-    velocity_threshold=6.0,
-    min_duration=3,
-    max_duration=20
+ds = load_session("data/monkey_sample/sample_1_EyeData.mat")
+x, y, _ = preprocess_trial(
+    ds.eye_x[0], ds.eye_y[0],
+    sampling_rate_hz=MONKEY_CONFIG.sampling_rate_hz,
+    lowpass_cutoff_hz=MONKEY_CONFIG.lowpass_cutoff_hz,
 )
-
-# Detect blinks
-blinks = detect_blinks(
-    x_positions,
-    y_positions,
-    timestamps,
-    min_duration=50,
-    min_amplitude=2.0
-)
-
-# Detect glitches
-glitches = detect_glitches(
-    x_positions,
-    y_positions,
-    timestamps,
-    threshold=5.0
-)
+events = detect_microsaccades(x, y, MONKEY_CONFIG)
+for ev in events:
+    print(ev)
 ```
 
-### Advanced Usage
+The full pipeline (preprocess → detect → bin rate → SVM decode) is in
+[`notebooks/reproduce_monkey.ipynb`](notebooks/reproduce_monkey.ipynb).
 
-For more advanced usage examples, please refer to the [examples](examples/) directory.
-
-## Development
-
-### Setting Up Development Environment
-
-1. Install development dependencies:
-```bash
-pip install -e ".[dev]"
-```
-
-2. Install pre-commit hooks:
-```bash
-pre-commit install
-```
-
-### Running Tests
+## Tests
 
 ```bash
-pytest
+.venv/bin/python -m pytest
+# 82 passed
 ```
 
-For coverage report:
-```bash
-pytest --cov=src tests/
-```
+Tests are organized into per-module units, a reference cross-check
+against `pymovements`, and an end-to-end acceptance test on the shipped
+monkey sample that verifies the suppression-rebound rate-trace timing
+matches the published values. See `tests/README.md`.
 
-### Code Style
+## Algorithm + parameter details
 
-This project uses:
-- Black for code formatting
-- isort for import sorting
-- flake8 for linting
-- mypy for type checking
-
-Run all checks:
-```bash
-black src tests
-isort src tests
-flake8 src tests
-mypy src
-```
-
-## Contributing
-
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+`METHODS.md` documents:
+- the EK 2003 equations and the two canonical sigma forms (`engbert2003`
+  vs `engbert2015`)
+- per-dataset parameter values (sampling rate, λ, min/max duration,
+  amplitude cap, refractory window, ...) and their literature sources
+- known deviations from the published methods and why
+- the bug list inherited from the previous library
 
 ## Citation
 
-If you use this code in your research, please cite:
-
 ```bibtex
 @article{nouri2025microsaccade,
-  title={Microsaccade selectivity as discriminative feature for object decoding},
-  author={Nouri, Salar and Tehrani, Amirali Soltani and Faridani, Niloufar and Toosi, Ramin and Noroozi, Jalaledin and Dehaqani, Mohammad-Reza A},
-  journal={Iscience},
-  volume={28},
-  number={1},
-  year={2025},
-  publisher={Elsevier}
+  title  = {Microsaccade selectivity as discriminative feature for object decoding},
+  author = {Nouri, Salar and Tehrani, Amirali Soltani and Faridani, Niloufar
+            and Toosi, Ramin and Noroozi, Jalaledin and Dehaqani, Mohammad-Reza A},
+  journal= {iScience},
+  volume = {28},
+  number = {1},
+  pages  = {111584},
+  year   = {2025},
 }
 ```
 
-## Acknowledgments
+## License
 
-- List any acknowledgments here
-- Include references to related work
-- Credit any collaborators or institutions
+MIT — see `LICENSE`.
