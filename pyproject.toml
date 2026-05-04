@@ -3,8 +3,8 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ms-selectivity-feature"
-version = "0.1.0"
+name = "msfeature"
+version = "0.2.0"
 description = "Microsaccade Selectivity as Discriminative Feature for Object Decoding"
 readme = "README.md"
 authors = [
@@ -20,12 +20,12 @@ classifiers = [
 ]
 requires-python = ">=3.11"
 dependencies = [
-    "numpy>=2.1.1",
-    "scikit-learn>=1.5.2",
-    "scipy>=1.14.1",
-    "matplotlib>=3.9.2",
-    "pandas>=2.2.3",
-    "seaborn>=0.13.2",
+    "numpy>=2.1",
+    "scikit-learn>=1.5",
+    "scipy>=1.14",
+    "matplotlib>=3.9",
+    "pandas>=2.2",
+    "seaborn>=0.13",
 ]
 
 [project.optional-dependencies]
@@ -52,7 +52,7 @@ use_parentheses = true
 ensure_newline_before_comments = true
 line_length = 88
 skip = ["venv", ".git", "build", "dist"]
-known_first_party = ["src"]
+known_first_party = ["msfeature"]
 known_third_party = ["numpy", "pandas", "scipy", "sklearn", "matplotlib", "seaborn", "pytest"]
 
 [tool.mypy]
@@ -86,4 +86,5 @@ per-file-ignores = [
 ]
 
 [tool.pytest.ini_options]
-pythonpath = ["."] 
+pythonpath = ["src", "."]
+testpaths = ["tests"]
