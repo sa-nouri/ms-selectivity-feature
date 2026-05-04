@@ -1,15 +1,16 @@
-ipykernel==6.29.5
-numpy==2.1.1
-scikit-learn==1.5.2
-scipy==1.14.1
-matplotlib==3.9.2
-pandas==2.2.3
-seaborn==0.13.2
-pytest
-black
-isort
-flake8
-mypy
-types-setuptools
-types-pytest
+numpy>=2.1
+scipy>=1.14
+pandas>=2.2
+scikit-learn>=1.5
+matplotlib>=3.9
+seaborn>=0.13
+ipykernel>=6.29
 
+# Dev / test
+pytest>=8.0
+pytest-cov>=4.1
+black>=24.1
+isort>=5.13
+flake8>=7.0
+mypy>=1.8
+pymovements>=0.26
